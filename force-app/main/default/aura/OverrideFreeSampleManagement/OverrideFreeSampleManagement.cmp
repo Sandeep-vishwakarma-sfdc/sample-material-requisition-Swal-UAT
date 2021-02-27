@@ -1,0 +1,12 @@
+<aura:component controller="SampleMaterialRequisition" implements="lightning:actionOverride,force:appHostable,force:hasRecordId,flexipage:availableForAllPageTypes,force:hasSObjectName,lightning:hasPageReference,force:lightningQuickAction,lightning:isUrlAddressable" access="global" >
+    <aura:attribute name="pageReference" type="object" access="global" />
+    <aura:attribute name="recordId" type="string" />
+    <aura:attribute name="vf" type="string" />
+    <aura:attribute name="recordTypeId" type="string" />
+    <aura:handler name="change" value="{!v.pageReference}" action="{!c.handlePageChange}" />
+    <aura:attribute name="isSWAL" type="boolean" default="false" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+   <aura:if isTrue="{!v.isSWAL}">
+        <c:materialRequisition aura:id="materialrequi" freesamplemanagementid="{!v.recordId}" externaluser="{!v.vf}"></c:materialRequisition>
+   </aura:if>
+</aura:component>

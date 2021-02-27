@@ -1,0 +1,21 @@
+<apex:page showHeader="false" >
+  <body>
+  <apex:includeLightning />
+      <div id="ligtningcmp">
+      </div>
+      <script>
+        var recId = '{!$CurrentPage.parameters.recordId}'
+        var vf = '{!$CurrentPage.parameters.vf}'
+        $Lightning.use("c:MaterialRequisitionOut", function() {
+        $Lightning.createComponent(
+            "c:OverrideFreeSampleManagement",
+            {recordId:recId,vf:vf},
+            "ligtningcmp",
+            function(cmp) {
+                console.log('component created');
+                console.log(cmp);
+            });
+        });
+     </script>
+  </body>
+</apex:page>

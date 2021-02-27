@@ -1,0 +1,388 @@
+<template>
+  <div class="slds" style="background:#fff;">
+    <h1 style="color:#000; font-weight:normal; font-size:18px; padding:10px 3px 3px 3px; margin:5px 0 10px 10px;"
+      class="slds-m-bottom_medium"><b>Material Requisition {freesampleObj.Name}</b></h1>
+   
+    <div class="slds-grid slds-wrap slds-grid--pull-padded"
+      style="background:#fff; margin:0px; padding:0; border:1px solid #cce4f8;">
+
+      <div style="clear:both;"></div>
+      
+      <div if:true={is_TM} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3">
+        <div class="slds-form-element" style="margin-top:12px;">
+          <div class="slds-form-element__control">
+            <lightning-combobox name="Depot" label="Depot" value={freesampleObj.Depot__c} placeholder="Select Depot"
+              options={lstDepotOption} disabled={disable.Depot} onchange={handleChangeDepot}>
+            </lightning-combobox>
+          </div>
+        </div>
+      </div>
+    
+    
+      <div if:false={is_TM} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3">
+        <div class="slds-form-element" style="margin-top:12px;">
+          <div class="slds-form-element__control">
+            <lightning-input type="text"  label="Depot" value={freesampling.Depot} disabled=true></lightning-input>
+          </div>
+        </div>
+      </div>
+    
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="text"  label="Status" value={freesampling.status} disabled={disable.Status}></lightning-input>
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="text"  label="Sub Status" value={freesampling.substatus} disabled={disable.sub_status}></lightning-input>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="slds-section-title--divider slds-p-horizontal--small slds-size--1-of-1"
+        style="margin:8px 0 0 0; background:#dcedfb; font-weight:bold;">
+        ADD Product
+      </h3>
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <label class="slds-form-element__label">Product<span class="star">*</span></label>
+          <div class="slds-form-element__control">
+            <c-lookupcmp placeholder='Select Product' iconname='standard:product' multiselect=false sobject='Product2'
+              fieldname='Name' filter={product_filter} displayfield='Name' onselected={handleProductSelected}
+              singleselectedrec={freeSampleProduct.product.Name} onremove={handleRemoveProduct} cmpwidth='long'
+              disable={disable.Product} onmultiselected={handleMultipleAccountSelected}></c-lookupcmp>
+              <div class="star" if:true={validate.product}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <label class="slds-form-element__label">Demo Acre<span class="star">*</span></label>
+          <div class="slds-form-element__control">
+            <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Acre" onchange={handleDemoAcre} value={freeSampleProduct.dose_acre} disabled={disable.demo_acre}></lightning-input>
+            <div class="star" if:true={validate.dose_acre}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <label class="slds-form-element__label">Demo Size<span class="star">*</span></label>
+          <div class="slds-form-element__control">
+            <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Size" onchange={handleDemoSize} value={freeSampleProduct.demo_size} disabled={disable.demo_size}></lightning-input>
+            <div class="star" if:true={validate.demo_size}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <label class="slds-form-element__label">Number of Demo<span class="star">*</span></label>
+          <div class="slds-form-element__control">
+            <lightning-input type="number"  step="any" variant="label-hidden" label="Number of Demo" onchange={handleNumberOfDemo} value={freeSampleProduct.numberOfDemo} disabled={disable.number_of_size}></lightning-input>
+            <div class="star" if:true={validate.numberOfDemo}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+          </div>
+        </div>
+      </div>
+
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <label class="slds-form-element__label">Target Crop<span class="star">*</span></label>
+          <div class="slds-form-element__control">
+            <c-lookupcmp placeholder='Select Crop' iconname='standard:product' multiselect=true sobject='Crop__c'
+              fieldname='Name' filter={crop_filter} displayfield='Name' onselected={handleCropSelected}
+              singleselectedrec={crop.Id} onremove={handleRemoveCrop} cmpwidth='long' disable={disable.Crop}
+              onmultiselected={handleMultipleCropSelected}></c-lookupcmp>
+              <div class="star" if:true={validate.crop}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <label class="slds-form-element__label">Target Pest<span class="star">*</span></label>
+          <div class="slds-form-element__control">
+            <c-lookupcmp placeholder='Select Pest' iconname='standard:product' multiselect=true sobject='Pest__c'
+              fieldname='Name' filter={pest_filter} displayfield='Name' onselected={handlePestSelected}
+              singleselectedrec={pest.Id} onremove={handleRemovePest} cmpwidth='long' disable={disable.Pest}
+              onmultiselected={handleMultiplePestSelected}></c-lookupcmp>
+              <div class="star" if:true={validate.CropPest}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="slds-align_absolute-center slds-p-top_small slds-p-horizontal--small slds-size--1-of-1"
+        style="padding-top:10px; margin-top:20px; margin-bottom:10px; border-top:1px solid #d8dde6;">
+        <lightning-button label="Add" onclick={handleAddProduct} disabled={buttonmatrixobj.addbtn}></lightning-button>&nbsp;
+        <!-- <lightning-button label="clear" disabled={buttonmatrixobj.canclebtn} onclick={clearProductSection}></lightning-button> -->
+      </div>
+
+    </div>
+
+    <div if:true={productSection}>
+    <h3 class="slds-section-title--divider slds-p-horizontal--small slds-size--1-of-1"
+      style="margin-top:0px; padding-bottom:22px; background:#e1e3e5; color:#000; font-weight:bold;">
+      <div
+        style="float:left; display:inline; margin-top:0px; padding-bottom:15px; padding-right:20px; font-weight:bold;">
+        Product Detail</div>
+    </h3>
+
+    <div style="clear:both;"></div>
+    <div class="slds-scrollable_x" style="margin-bottom:0;">
+      <table width="100%" class="slds-table slds-table_bordered slds-table_cell-buffer">
+        <thead>
+          <tr class="slds-text-heading--label">
+            <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate">Product</div>
+            </th>
+            <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate">Acre</div>
+            </th>
+            <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate">Size</div>
+            </th>
+            <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate">Demo</div>
+            </th>
+            <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate">Target Crop</div>
+            </th>
+            <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate">Target Pest</div>
+            </th>
+            <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate">Action</div>
+            </th>
+            <th class="slds-cell-shrink"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <template for:each={lstfreeSampleProduct} for:item="fsp">
+          <tr key={fsp.Id} class="slds-hint-parent">
+            <th class="slds-truncate" scope="row" data-label="PRODUCT" id={fsp.Id}>{fsp.product.Name}</th>
+            <th class="slds-truncate" data-label="Acre">{fsp.dose_acre}</th>
+            <td class="slds-truncate" data-label="Size">{fsp.demo_size}</td>
+            <td class="slds-truncate" data-label="Demo">{fsp.numberOfDemo}</td>
+            <td>
+            <template for:each={fsp.product.crop} for:item="crop">
+              <tr key={crop.Id} class="slds-truncate" data-label="Target Crop">
+                <td>{crop.Name}</td>
+              </tr>
+            </template>
+            </td>
+            <td>
+            <template for:each={fsp.product.CropPest} for:item="pest">
+              <tr key={pest.Id} class="slds-truncate" data-label="Target Pest">
+                <td>{pest.Name}</td>
+              </tr>
+            </template>
+            </td>
+            <!-- <td class="slds-truncate" data-label="Action">
+              <lightning-button label="Edit"></lightning-button> {buttonmatrixobj.deleteDisable}
+            </td> -->
+            <td class="slds-truncate" data-label="Action">
+              <lightning-button-icon icon-name="action:delete" size="small" alternative-text="Delete" onclick={handleRemoveFreeSampleProduct} title="Delete" id={fsp.Id} disabled={buttonmatrixobj.deleteDisable}></lightning-button-icon>
+            </td>
+          </tr>
+        </template>
+        </tbody>
+      </table>
+    </div>
+    </div>
+
+    <div class="slds-grid slds-wrap slds-grid--pull-padded" style="padding-left:12px; padding-right:12px;">
+      <h3 class="slds-section-title--divider slds-p-horizontal--small slds-size--1-of-1"
+        style="margin:8px 0 0 0; background:#dcedfb; font-weight:bold;">
+        Depot Detail
+        <!-- lightning:icon iconName="utility:search" size="small" alternativeText="Indicates search"/ -->
+      </h3>
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="text" name="input1" label="PO Number" value={freesampleObj.PO_Number__c} disabled={disable.po_number} onchange={handleChangePoNumber}></lightning-input>
+            <div class="star" if:true={validate.po_number}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="date" name="input1" label="Material Dispatched On" value={freesampleObj.Material_Dispatched_Date__c} disabled={disable.material_dispatch_on} onchange={handleChangeMaterialDispatch}></lightning-input>
+            <div class="star" if:true={validate.material_dispatch_on}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+
+      <h3 class="slds-section-title--divider slds-p-horizontal--small slds-size--1-of-1"
+        style="margin:8px 0 0 0; background:#dcedfb; font-weight:bold;">
+        Approval Detail
+        <!-- lightning:icon iconName="utility:search" size="small" alternativeText="Indicates search"/ -->
+      </h3>
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="text" name="input1" value={freesampling.X1st_Approval_Date_Time__c} label="Approved by RM On"  disabled={disable.approve_by_rm}></lightning-input>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="date" name="input1" value={freesampling.X2nd_Approval_Date_Time__c} label="Approved by ZML On" disabled={disable.approve_by_zml}></lightning-input>
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="date" name="input1" value={freesampling.X3rd_Approval_Date_Time__c} label="Approved by HOM On" disabled={disable.approve_by_hom}></lightning-input>
+          </div>
+        </div>
+      </div>
+
+
+      <h3 class="slds-section-title--divider slds-p-horizontal--small slds-size--1-of-1"
+        style="margin:8px 0 0 0; background:#dcedfb; font-weight:bold;">
+        Comments
+        <!-- lightning:icon iconName="utility:search" size="small" alternativeText="Indicates search"/ -->
+      </h3>
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="text" name="input1" label="HO Comment" value={freesampleObj.Ho_comment__c} onchange={handleChangeHOComment} disabled={disable.ho_comment}></lightning-input>
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;" hidden={buttonmatrixobj.ho_statushidden}>
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-combobox  label="HO Status" value={ho_status} placeholder="Select Status"
+              options={ho_statusOption} disabled={disable.ho_status} onchange={handleChangeHoStatus} >
+            </lightning-combobox>
+            <div class="star" if:true={validate.ho_status}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-align_absolute-center slds-p-top_small slds-p-horizontal--small slds-size--1-of-1"
+        style="padding-top:10px; margin-top:20px; margin-bottom:10px; border-top:1px solid #d8dde6;">
+        <lightning-button label="Save" icon-name="utility:save" icon-position="right" disabled={buttonmatrixobj.saveDisable} hidden={buttonmatrixobj.saveHidden} onclick={handleSaveMaterialRequisition}>
+        </lightning-button>&nbsp;
+        <!-- <lightning-button label="Edit" icon-name="utility:edit" icon-position="right" disabled={buttonmatrixobj.editDisable} hidden={buttonmatrixobj.editHidden} onclick={handleEditAction}> 
+        </lightning-button>&nbsp;-->
+        <lightning-button label="Cancel" icon-name="utility:back" icon-position="right" disabled={buttonmatrixobj.cancelDisable} hidden={buttonmatrixobj.cancelHidden} onclick={handleBacktoRecord}>
+        </lightning-button>&nbsp;
+        <lightning-button label="Save &amp; Submit for Approval" icon-name="utility:approval" icon-position="right" disabled={buttonmatrixobj.submit_for_approvalDisable}
+          hidden={buttonmatrixobj.submit_for_approvalHidden} onclick={handleSubmitforApproval}></lightning-button>&nbsp;
+        <lightning-button label="Approve" icon-name="utility:check" icon-position="right" disabled={buttonmatrixobj.approveDisable}
+          hidden={buttonmatrixobj.approveHidden} onclick={handleApprove}></lightning-button>&nbsp;
+        <lightning-button label="Reject" icon-name="utility:close" icon-position="right" disabled={buttonmatrixobj.rejectDisable} hidden={buttonmatrixobj.rejectHidden} onclick={handleReject}>
+        </lightning-button>&nbsp;
+        <lightning-button label="Approval History" icon-name="utility:package_org" icon-position="right" disabled={buttonmatrixobj.approval_histroyDisable}
+          hidden={buttonmatrixobj.approval_histroyhidden} onclick={handleApprovalHistroy}></lightning-button>
+      </div>
+    </div>
+  </div>
+
+  <template if:true={aShowModal}>
+    <section role="dialog" tabindex="-1"
+             aria-labelledby="modal-heading-01"
+             aria-modal="true"
+             aria-describedby="modal-content-id-1"
+            class="slds-modal slds-modal_medium slds-fade-in-open">
+       <div class="slds-modal__container ">
+          <!-- modal header start -->
+          <header class="slds-modal__header">
+             <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small" ></lightning-icon>
+             </button>
+             <h2 id="modal-heading-02" class="slds-text-heading_medium slds-hyphenate">Approval History</h2>
+          </header>
+          <!-- modal body start -->
+          <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-2">
+            <c-approval-History
+            record-id={freesampleObj.Id}
+            show-comments=false
+            allow-submit-for-approval=false
+            >
+            </c-approval-History>
+            
+          </div>
+          <!-- modal footer start-->
+          <footer class="slds-modal__footer">
+               <lightning-button variant="brand"
+               label="Close"
+               title="Close"
+               onclick={closeModal}
+               ></lightning-button>
+          </footer>
+       </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+ </template>
+
+  <div  if:true={spinner} class="demo-only" style="height:6rem">
+    <div class="slds-spinner_container" style="position: fixed;">
+      <div role="status" class="slds-spinner slds-spinner_medium slds-spinner_brand">
+        <span class="slds-assistive-text">Loading</span>
+        <div class="slds-spinner__dot-a"></div>
+        <div class="slds-spinner__dot-b"></div>
+      </div>
+    </div>
+  </div>
+<!-- custom start toast mesg -->
+  <!-- <div if:true={customToast.showToast}>
+     <c-custom-toast message={customToast.message} title={customToast.title} variant={customToast.varient}></c-custom-toast>
+  </div> -->
+<!-- custom end toast mesg -->
+</template>
