@@ -743,7 +743,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         });
     }
-
+// comment
     disablefield(product,demo_acre,demo_size,num_size,crop,pest){
         this.disable.Product = product;
         this.disable.demo_acre = demo_acre;
