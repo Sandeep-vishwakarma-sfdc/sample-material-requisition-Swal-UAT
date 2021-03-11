@@ -15,6 +15,7 @@ import getProfile from '@salesforce/apex/SampleMaterialRequisition.getProfile';
 import approveRecord from '@salesforce/apex/SampleMaterialRequisition.approveRecord';
 import rejectRecord from '@salesforce/apex/SampleMaterialRequisition.rejectRecord';
 import getCurrentUser from '@salesforce/apex/SampleMaterialRequisition.getCurrentUser';
+import reCallApprovalProcess from '@salesforce/apex/SampleMaterialRequisition.reCallApprovalProcess';
 
 
 const Depot = 'D';
@@ -49,7 +50,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         'product':{'Id':'','Name':'','crop':[],'CropPest':[]},
         'dose_acre':'',
         'demo_size':'',
-        'numberOfDemo':''
+        'numberOfDemo':'',
+        'DemoSampleQty':''
     };
     @track fakeId = 1;
     @track hasRendered = {'Freesampling':false,'spinner':false};
@@ -67,6 +69,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         title:'Success',
         varient:'success'
     }
+    @track demo_sample_formula = '';
     submitForApprovalflag = false;
     actionbyHo = false; 
     is_TM = false;
@@ -244,8 +247,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.disablefield(true,true,true,true,true,true);
             if(this.externaluser==Depot){
                 if(this.freesampleObj.PO_Number__c!=undefined){
-                    this.disable.po_number = true;
-                    this.disableButton(true,true,true,true,true,true);
+                    this.disable.po_number = false;
+                    this.disableButton(false,true,true,true,true,true);
                 }else{
                     this.disable.po_number = false;
                     this.disableButton(false,true,true,true,true,true);
@@ -323,6 +326,10 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 let fsp = JSON.parse(JSON.stringify(data));
                 console.log('lst lstfreeSampleProduct from class ',fsp);
                 this.lstfreeSampleProduct = fsp;
+                this.lstfreeSampleProduct.forEach(product=>{
+                    let demosamplyqty = product.dose_acre*product.demo_size*product.numberOfDemo;
+                    product.DemoSampleQty = Number.isNaN(Number(demosamplyqty))?0:demosamplyqty;
+                });
                 this.productSection = this.lstfreeSampleProduct.length > 0?true:false;
             }).catch(err=>console.log('Err ',err));
         }
@@ -438,6 +445,11 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
 
     saveMaterialReq(){
         saveFreeSampleManagement({freeSamplingObj:this.freesampleObj}).then(fsm=>{
+             this.lstfreeSampleProduct.forEach(product=>{
+                delete product.DemoSampleQty;
+             });
+             console.log('lst FSP ',this.lstfreeSampleProduct);
+
             let str = JSON.stringify(this.lstfreeSampleProduct); 
             this.freesampleObj = fsm;
             console.log('NEW FSM ID -->',fsm.Id);
@@ -477,6 +489,14 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             console.log('Exception in adding Product ',err)
             this.showToastmessage('Error', 'Unable to create Material requisition', 'error');
         });
+        if(this.externaluser==Ho_commercial){
+            console.log(`this.freesampleObj.Status__c ${this.freesampleObj.Status__c} this.freesampleObj.Sub_Status__c ${this.freesampleObj.Sub_Status__c}`);
+            if(this.freesampleObj.Status__c ==this.status.reject && this.freesampleObj.Sub_Status__c==this.sub_status.Rejected_by_HO_Commercial){
+            reCallApprovalProcess({fsmid:this.freesampleObj.Id}).then(data=>{
+                console.log(data);
+            }).catch((err)=>console.log('ERR while restting ',err));
+            }
+        }
         });
     }
 
@@ -595,19 +615,31 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         if(this.hasValue(event.target.value)){
             this.freeSampleProduct.dose_acre = event.target.value;
             this.validate.dose_acre = false;
+        }else{
+            this.freeSampleProduct.dose_acre = '';
         }
+        let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
+        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQty))?0:demosampleQty;
     }
     handleDemoSize(event){
         if(this.hasValue(event.target.value)){
             this.freeSampleProduct.demo_size = event.target.value;
             this.validate.demo_size = false;
+        }else{
+            this.freeSampleProduct.demo_size = '';
         }
+        let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
+        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQty))?0:demosampleQty;
     }
     handleNumberOfDemo(event){
         if(this.hasValue(event.target.value)){
             this.freeSampleProduct.numberOfDemo = event.target.value;
             this.validate.numberOfDemo = false;
+        }else{
+            this.freeSampleProduct.numberOfDemo = '';
         }
+        let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
+        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQty))?0:demosampleQty;
     }
     handleChangePoNumber(event){
         let val = event.target.value;

@@ -103,7 +103,9 @@
       <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
         style="margin-top:12px;">
         <div class="slds-form-element">
+          <label class="slds-form-element__label">Demo Sample Qty (GM/ML)</label>
           <div class="slds-form-element__control">
+            <lightning-input type="text"  step="any" variant="label-hidden" label="Demo Sample Qty (GM/ML)" disabled value={freeSampleProduct.DemoSampleQty} ></lightning-input>
           </div>
         </div>
       </div>
@@ -180,6 +182,9 @@
               <div class="slds-truncate">Demo</div>
             </th>
             <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate">Demo Sample Qty</div>
+            </th>
+            <th class="slds-is-sortable" scope="col">
               <div class="slds-truncate">Target Crop</div>
             </th>
             <th class="slds-is-sortable" scope="col">
@@ -198,6 +203,7 @@
             <th class="slds-truncate" data-label="Acre">{fsp.dose_acre}</th>
             <td class="slds-truncate" data-label="Size">{fsp.demo_size}</td>
             <td class="slds-truncate" data-label="Demo">{fsp.numberOfDemo}</td>
+            <td class="slds-truncate" data-label="Demo Sample Qty (GM/ML)">{fsp.DemoSampleQty}</td>
             <td>
             <template for:each={fsp.product.crop} for:item="crop">
               <tr key={crop.Id} class="slds-truncate" data-label="Target Crop">

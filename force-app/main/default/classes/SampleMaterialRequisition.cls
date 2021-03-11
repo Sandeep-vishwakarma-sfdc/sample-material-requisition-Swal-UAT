@@ -70,9 +70,10 @@ public without sharing class SampleMaterialRequisition {
     @AuraEnabled
     public static Free_Sample_Management__c saveFreeSampleManagement(Free_Sample_Management__c freeSamplingObj){
         upsert freeSamplingObj;
-        // if(getProfile()!='Territory Manager for Swal'){
-            sendEmailToUser(freeSamplingObj.Id);
-        // }
+        if(freeSamplingObj.Status__c == 'Rejected' && freeSamplingObj.Sub_Status__c=='Rejected by HO Commercial'){
+            //reCallApprovalProcess(freeSamplingObj.Id);
+        }
+        sendEmailToUser(freeSamplingObj.Id);
         return freeSamplingObj;
     }
 
@@ -250,11 +251,29 @@ public without sharing class SampleMaterialRequisition {
     public static Free_Sample_Management__c submitForApproval(String fsm_id){
         Free_Sample_Management__c fsm = new Free_Sample_Management__c();
         fsm = [SELECT Id,Name,Sales_Org__c,Territory_Manager__c,Territory__c,Depot__c,Status__c,Sub_Status__c,Office_Manager__c,Approval_Submission_Date_Time__c from Free_Sample_Management__c where Id=:fsm_id];
-        if(fsm.Status__c == 'Rejected' && fsm.Sub_Status__c == 'Rejected by HO Commercial'){
-           setApprovalProcess(fsm);
-        }
         setApprovalProcess(fsm);
         return fsm;
+    }
+    @AuraEnabled
+    public static String reCallApprovalProcess(String fsmid) {
+       
+        try {
+            Free_Sample_Management__c fsm = [select Id,Name,PO_Number__c,Approval_Submission_Date_Time__c,Auto_Approved_1__c,RMNotification12HrsChecked__c,ZMNotification18HrsChecked__c,X1st_Approval_Date_Time__c,X2nd_Approval_Date_Time__c,X3rd_Approval_Date_Time__c,Auto_Approved_2__c,ZMNotification12HrsChecked__c,RMNotification18HrsChecked__c from Free_Sample_Management__c where Id=:fsmid];
+            fsm.Approval_Submission_Date_Time__c = null;
+            fsm.Auto_Approved_1__c = false;
+            fsm.RMNotification12HrsChecked__c = false;
+            fsm.ZMNotification18HrsChecked__c = false;
+            fsm.X1st_Approval_Date_Time__c = null;
+            fsm.X2nd_Approval_Date_Time__c = null;
+            fsm.X3rd_Approval_Date_Time__c = null;
+            fsm.Auto_Approved_2__c = false;
+            fsm.ZMNotification12HrsChecked__c = false;
+            fsm.RMNotification18HrsChecked__c = false;
+            update fsm;
+            return 'reset';
+        } catch (Exception e) {
+            return 'error'+e.getMessage();
+        }
     }
 
     public static Id getWorkItemId(String targetObjectId){
