@@ -68,7 +68,7 @@
       <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
         style="margin-top:12px;">
         <div class="slds-form-element">
-          <label class="slds-form-element__label">Demo Acre<span class="star">*</span></label>
+          <label class="slds-form-element__label">Demo Plot Size (Acre)<span class="star">*</span></label>
           <div class="slds-form-element__control">
             <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Acre" onchange={handleDemoAcre} value={freeSampleProduct.dose_acre} disabled={disable.demo_acre}></lightning-input>
             <div class="star" if:true={validate.dose_acre}>Complete this field</div>
@@ -79,7 +79,7 @@
       <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
         style="margin-top:12px;">
         <div class="slds-form-element">
-          <label class="slds-form-element__label">Demo Size<span class="star">*</span></label>
+          <label class="slds-form-element__label">Dose per Acre (Gram/ML)<span class="star">*</span></label>
           <div class="slds-form-element__control">
             <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Size" onchange={handleDemoSize} value={freeSampleProduct.demo_size} disabled={disable.demo_size}></lightning-input>
             <div class="star" if:true={validate.demo_size}>Complete this field</div>
@@ -103,7 +103,7 @@
       <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
         style="margin-top:12px;">
         <div class="slds-form-element">
-          <label class="slds-form-element__label">Demo Sample Qty (GM/ML)</label>
+          <label class="slds-form-element__label">Demo Sample Qty (Kg/Ltrs)</label>
           <div class="slds-form-element__control">
             <lightning-input type="text"  step="any" variant="label-hidden" label="Demo Sample Qty (GM/ML)" disabled value={freeSampleProduct.DemoSampleQty} ></lightning-input>
           </div>
@@ -170,28 +170,28 @@
         <thead>
           <tr class="slds-text-heading--label">
             <th class="slds-is-sortable" scope="col">
-              <div class="slds-truncate">Product</div>
+              <div class="slds-truncate center-ele">Product</div>
             </th>
             <th class="slds-is-sortable" scope="col">
-              <div class="slds-truncate">Acre</div>
+              <div class="slds-truncate center-ele">Demo Plot Size (Acre)</div>
             </th>
             <th class="slds-is-sortable" scope="col">
-              <div class="slds-truncate">Size</div>
+              <div class="slds-truncate center-ele">Dose per Acre(Gram/ML)</div>
             </th>
             <th class="slds-is-sortable" scope="col">
-              <div class="slds-truncate">Demo</div>
+              <div class="slds-truncate center-ele">Number of Demo</div>
             </th>
             <th class="slds-is-sortable" scope="col">
-              <div class="slds-truncate">Demo Sample Qty</div>
+              <div class="slds-truncate center-ele">Demo Sample Qty(Kg/Ltrs)</div>
             </th>
             <th class="slds-is-sortable" scope="col">
-              <div class="slds-truncate">Target Crop</div>
+              <div class="slds-truncate ">Target Crop</div>
             </th>
             <th class="slds-is-sortable" scope="col">
-              <div class="slds-truncate">Target Pest</div>
+              <div class="slds-truncate ">Target Pest</div>
             </th>
             <th class="slds-is-sortable" scope="col">
-              <div class="slds-truncate">Action</div>
+              <div class="slds-truncate center-ele">Action</div>
             </th>
             <th class="slds-cell-shrink"></th>
           </tr>
@@ -199,11 +199,11 @@
         <tbody>
           <template for:each={lstfreeSampleProduct} for:item="fsp">
           <tr key={fsp.Id} class="slds-hint-parent">
-            <th class="slds-truncate" scope="row" data-label="PRODUCT" id={fsp.Id}>{fsp.product.Name}</th>
-            <th class="slds-truncate" data-label="Acre">{fsp.dose_acre}</th>
-            <td class="slds-truncate" data-label="Size">{fsp.demo_size}</td>
-            <td class="slds-truncate" data-label="Demo">{fsp.numberOfDemo}</td>
-            <td class="slds-truncate" data-label="Demo Sample Qty (GM/ML)">{fsp.DemoSampleQty}</td>
+            <th class="slds-truncate center-ele" scope="row" data-label="PRODUCT" id={fsp.Id}>{fsp.product.Name}</th>
+            <th class="slds-truncate center-ele" data-label="Acre">{fsp.dose_acre}</th>
+            <td class="slds-truncate center-ele" data-label="Size">{fsp.demo_size}</td>
+            <td class="slds-truncate center-ele" data-label="Demo">{fsp.numberOfDemo}</td>
+            <td class="slds-truncate center-ele" data-label="Demo Sample Qty (GM/ML)">{fsp.DemoSampleQty}</td>
             <td>
             <template for:each={fsp.product.crop} for:item="crop">
               <tr key={crop.Id} class="slds-truncate" data-label="Target Crop">
@@ -221,7 +221,7 @@
             <!-- <td class="slds-truncate" data-label="Action">
               <lightning-button label="Edit"></lightning-button> {buttonmatrixobj.deleteDisable}
             </td> -->
-            <td class="slds-truncate" data-label="Action">
+            <td class="slds-truncate center-ele" data-label="Action">
               <lightning-button-icon icon-name="action:delete" size="small" alternative-text="Delete" onclick={handleRemoveFreeSampleProduct} title="Delete" id={fsp.Id} disabled={buttonmatrixobj.deleteDisable}></lightning-button-icon>
             </td>
           </tr>

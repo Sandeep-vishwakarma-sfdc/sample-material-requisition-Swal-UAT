@@ -4,7 +4,7 @@ public with sharing class SampleMaterialRequisitionTest {
     static void makeData(){
         
      User tm = new User(
-     ProfileId = [SELECT Id FROM Profile WHERE Name = 'Territory Manager for Swal'].Id,
+     ProfileId = [SELECT Id FROM Profile WHERE Name = 'Territory Manager SWAL'].Id,
      LastName = 'TM',
      Email = 'sandeep.vishwakarma@skinternational.com',
      Username = 'test@test.com' + System.currentTimeMillis(),
@@ -19,7 +19,7 @@ public with sharing class SampleMaterialRequisitionTest {
      insert tm;
      
      User rm = new User(
-     ProfileId = [SELECT Id FROM Profile WHERE Name = 'Regional/ Zonal for SWAL'].Id,
+     ProfileId = [SELECT Id FROM Profile WHERE Name = 'Regional/Zonal Manager SWAL'].Id,
      LastName = 'RM',
      Email = 'sandeep.vishwakarma@skinternational.com',
      Username = 'test@test.com' + System.currentTimeMillis(),
@@ -34,7 +34,7 @@ public with sharing class SampleMaterialRequisitionTest {
      insert rm;   
         
      User zm = new User(
-     ProfileId = [SELECT Id FROM Profile WHERE Name = 'Regional/ Zonal for SWAL'].Id,
+     ProfileId = [SELECT Id FROM Profile WHERE Name = 'Regional/Zonal Manager SWAL'].Id,
      LastName = 'ZM',
      Email = 'sandeep.vishwakarma@skinternational.com',
      Username = 'test@test.com' + System.currentTimeMillis(),
@@ -71,13 +71,14 @@ public with sharing class SampleMaterialRequisitionTest {
         
         Product2 prod = new Product2();
         prod.Name = 'Product_test';
+        prod.Combination_Key__c = 'testcombination';
         insert prod;
         
         Crop__c crop = new Crop__c();
         crop.Name = 'crop';
         insert crop;
         
-        Crop_Pest__c pest = new Crop_Pest__c();
+        Pest__c pest = new Pest__c();
         pest.Name = 'Pest';
         insert pest;
         
@@ -123,7 +124,7 @@ public with sharing class SampleMaterialRequisitionTest {
         fsm.Office_Manager__c = rm.Id;
         fsm.Sales_Assistant__c = zm.Id;
         fsm.Technical_Manager__c = Hom.Id; //UPL LTD as third Approval
-        fsm.Sales_Org__c = sales_org.Id;
+        fsm.SalesOrg__c = sales_org.Id;
         fsm.Zip_Code__c = '123-4567'; // Need to change
         fsm.Status__c = 'Draft';
         fsm.Depot__c = depot.Id;
@@ -164,7 +165,7 @@ public with sharing class SampleMaterialRequisitionTest {
         Free_Sample_Management__c fsm = [select Id,Name,Status__c,Sub_Status__c from Free_Sample_Management__c where Zip_Code__c = '123-4567' limit 1];
         Product2 prod = [select Id,Name from Product2 limit 1];
         Crop__c crop = [select Id,Name from Crop__c limit 1];
-        Crop_Pest__c pest = [select Id,Name from Crop_Pest__c limit 1];
+        Pest__c pest = [select Id,Name from Pest__c limit 1];
         User rm = [select Id,Name from User where LastName='RM' limit 1];
         User zm = [select Id,Name from User where LastName='ZM' limit 1];
         User Hom = [select Id,Name from User where LastName='HOM' limit 1];
@@ -192,7 +193,7 @@ public with sharing class SampleMaterialRequisitionTest {
         fsm1.Office_Manager__c = rm.Id;
         fsm1.Sales_Assistant__c = zm.Id;
         fsm1.Technical_Manager__c = hom.Id; //UPL LTD as third Approval
-        fsm1.Sales_Org__c = sales_org.Id;
+        fsm1.SalesOrg__c = sales_org.Id;
         fsm1.Status__c = 'Draft';
         fsm1.Depot__c = depot.Id;
         insert fsm1;  

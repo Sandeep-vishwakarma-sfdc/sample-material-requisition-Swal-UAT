@@ -33,7 +33,7 @@ public without sharing class SampleMaterialRequisition {
         newfsm.recordTypeId = fsmRecordType;
         newfsm.Territory_Manager__c = UserInfo.getUserId();
         newfsm.Technical_Manager__c = ho_commerical; //UPL LTD as third Approval
-        newfsm.Sales_Org__c = getSalesOrgCode().Id;
+        newfsm.SalesOrg__c = getSalesOrgCode().Id;
         newfsm.Zip_Code__c = '123-4567'; // Need to change
         newfsm.Status__c = 'Draft';
         System.debug('New Free_Sample_Management__c created '+newfsm.Id);
@@ -54,7 +54,7 @@ public without sharing class SampleMaterialRequisition {
 
     @AuraEnabled(cacheable=true)
     public static Territory_Distributor__c getManagers(){
-        Territory_Distributor__c territory = [SELECT Id, Name, Region__c,Region__r.RegionHead__c, TerritoryManager__c, SalesOrg__c, Zone__c,Zone__r.ZonalHead__c FROM Territory_Distributor__c where TerritoryManager__c =:UserInfo.getUserId()];
+        Territory_Distributor__c territory = [SELECT Id, Name, Region__c,Region__r.RegionHead__c, TerritoryManager__c, SalesOrg__c, Zone__c,Zone__r.ZonalHead__c,Zone__r.ZMMUser__c FROM Territory_Distributor__c where TerritoryManager__c =:UserInfo.getUserId()];
         return territory;
     }
 
@@ -62,7 +62,7 @@ public without sharing class SampleMaterialRequisition {
     public static Free_Sample_Management__c getFreesamplingById(String freeSampleMangtId){
         System.debug('FSM '+freeSampleMangtId);
         List<Free_Sample_Management__c> lstfsm = new List<Free_Sample_Management__c>();
-        lstfsm = [SELECT Id,Name,Sales_Org__c,Territory_Manager__c,Territory__c,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c,Status__c,Sub_Status__c,PO_Number__c,Material_Dispatched_Date__c,X1st_Approval_Date_Time__c,X2nd_Approval_Date_Time__c,X3rd_Approval_Date_Time__c,Ho_comment__c,Office_Manager__c,Sales_Assistant__c,Technical_Manager__c from Free_Sample_Management__c where Id=:freeSampleMangtId];
+        lstfsm = [SELECT Id,Name,SalesOrg__c,Territory_Manager__c,Territory__c,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c,Status__c,Sub_Status__c,PO_Number__c,Material_Dispatched_Date__c,X1st_Approval_Date_Time__c,X2nd_Approval_Date_Time__c,X3rd_Approval_Date_Time__c,Ho_comment__c,Office_Manager__c,Sales_Assistant__c,Technical_Manager__c from Free_Sample_Management__c where Id=:freeSampleMangtId];
         System.debug('FSM lst'+lstfsm);
         return lstfsm[0];
     }
@@ -250,7 +250,8 @@ public without sharing class SampleMaterialRequisition {
     @AuraEnabled
     public static Free_Sample_Management__c submitForApproval(String fsm_id){
         Free_Sample_Management__c fsm = new Free_Sample_Management__c();
-        fsm = [SELECT Id,Name,Sales_Org__c,Territory_Manager__c,Territory__c,Depot__c,Status__c,Sub_Status__c,Office_Manager__c,Approval_Submission_Date_Time__c from Free_Sample_Management__c where Id=:fsm_id];
+        fsm = [SELECT Id,Name,SalesOrg__c,Territory_Manager__c,Territory__c,Depot__c,Status__c,Sub_Status__c,Office_Manager__c,Approval_Submission_Date_Time__c from Free_Sample_Management__c where Id=:fsm_id];
+        
         setApprovalProcess(fsm);
         return fsm;
     }
@@ -428,7 +429,7 @@ public without sharing class SampleMaterialRequisition {
         String material_dispatch = fsm.Material_Dispatched_Date__c!=null?fsm.Material_Dispatched_Date__c.format():'--';
         htmlBody = '<table border="1"><tr ><th>Material Requisition</th><td>'+fsm.Name+'</td></tr><tr ><th>Depot</th><td>'+fsm.Depot__r.Name+'</td></tr><tr ><th>PO Number</th><td> '+fsm.PO_Number__c+'</td></tr><tr ><th>Material Dispatched Date</th><td> '+material_dispatch+'</td></tr><tr ><th>Status</th><td>'+fsm.Status__c+'</td></tr></table>';
 
-        htmlBody += '<br><table border="1" style="border-collapse: collapse"><caption>Product Details:</caption><tr><th>Product Name</th><th>Demo Acre</th><th>Demo Size</th><th>Number of Demo</th></tr>';
+        htmlBody += '<br><table border="1" style="border-collapse: collapse"><caption>Product Details:</caption><tr><th>Product Name</th><th>Demo Plot Size (Acre)</th><th>Dose per acre (Gram / ML)</th><th>Number of Demo</th></tr>';
         for(Free_Sampling_Product__c fsp : lst_fsp){
             String productName = fsp.Product__r.Name; if(fsp.Product__r.Name == null){productName = '--';}
             String Demo_Acre = String.valueOf(fsp.Dose_Acre_GM_ML_L_Per_Acre__c); if(fsp.Dose_Acre_GM_ML_L_Per_Acre__c == null){Demo_Acre = '--';}

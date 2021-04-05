@@ -337,7 +337,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             getManagers().then(data=>{
                 this.freesampleObj.Territory__c = data.Id!=undefined?data.Id:'';
                 this.freesampleObj.Office_Manager__c = data.Region__c!=undefined?data.Region__r.RegionHead__c:'';
-                this.freesampleObj.Sales_Assistant__c  = data.Zone__c!=undefined?data.Zone__r.ZonalHead__c:'';
+                this.freesampleObj.Sales_Assistant__c  = data.Zone__c!=undefined?data.Zone__r.ZMMUser__c:'';
             }).catch(err=>console.log('ERR getManagers ',err));
         }
         
@@ -599,7 +599,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.freeSampleProduct.product.CropPest = [];
         this.freeSampleProduct.dose_acre = '';
         this.freeSampleProduct.demo_size= '';
-        this.freeSampleProduct.numberOfDemo = '';  
+        this.freeSampleProduct.numberOfDemo = ''; 
+        this.freeSampleProduct.DemoSampleQty = '';
      
     }
 
@@ -619,7 +620,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.freeSampleProduct.dose_acre = '';
         }
         let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
-        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQty))?0:demosampleQty;
+        let demosampleQtyLtrs = Number(demosampleQty)>0?demosampleQty/1000:0;
+        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
     }
     handleDemoSize(event){
         if(this.hasValue(event.target.value)){
@@ -629,7 +631,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.freeSampleProduct.demo_size = '';
         }
         let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
-        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQty))?0:demosampleQty;
+        let demosampleQtyLtrs = Number(demosampleQty)>0?demosampleQty/1000:0;
+        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
     }
     handleNumberOfDemo(event){
         if(this.hasValue(event.target.value)){
@@ -639,7 +642,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.freeSampleProduct.numberOfDemo = '';
         }
         let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
-        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQty))?0:demosampleQty;
+        let demosampleQtyLtrs = Number(demosampleQty)>0?demosampleQty/1000:0;
+        this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
     }
     handleChangePoNumber(event){
         let val = event.target.value;
@@ -685,8 +689,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
     handleMultipleCropSelected(event){
         let lst = event.detail;
-        let temp = [];
-        lst.forEach(ele=>{
+        console.log('event details',event.detail);
+        let temp = [];  
+        Array.prototype.forEach.call(lst,ele=>{
             let obj = {
                 'Id':ele.recId,
                 'Name':ele.recName,
