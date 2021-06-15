@@ -70,6 +70,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         varient:'success'
     }
     @track demo_sample_formula = '';
+    @track salesOrg = '';
     submitForApprovalflag = false;
     actionbyHo = false; 
     is_TM = false;
@@ -114,6 +115,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         if(data){
             console.log('salesorg ',data);
             this.salesOrgCode = data.Sales_Org_Code__c;
+            this.salesOrg = data.Id;
             this.product_filter = `Sales_Org_Code__c='${this.salesOrgCode}' order by Name ASC limit 15`;
             this.crop_filter = `Sales_Org_Code__c='1000' order by Name ASC limit 15`;
             this.pest_filter =  `Name!=null order by Name ASC limit 15`;
@@ -326,9 +328,10 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 let fsp = JSON.parse(JSON.stringify(data));
                 console.log('lst lstfreeSampleProduct from class ',fsp);
                 this.lstfreeSampleProduct = fsp;
-                this.lstfreeSampleProduct.forEach(product=>{
+                Array.prototype.forEach.call(this.lstfreeSampleProduct,product=>{
                     let demosamplyqty = product.dose_acre*product.demo_size*product.numberOfDemo;
-                    product.DemoSampleQty = Number.isNaN(Number(demosamplyqty))?0:demosamplyqty;
+                    let demosampleQtyLtrs = Number(demosamplyqty)>0?demosamplyqty/1000:0;
+                    product.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
                 });
                 this.productSection = this.lstfreeSampleProduct.length > 0?true:false;
             }).catch(err=>console.log('Err ',err));
@@ -444,8 +447,10 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
 
     saveMaterialReq(){
+        this.freesampleObj.SalesOrg__c = this.salesOrg;
+        console.log('FSM new ',this.freesampleObj);
         saveFreeSampleManagement({freeSamplingObj:this.freesampleObj}).then(fsm=>{
-             this.lstfreeSampleProduct.forEach(product=>{
+             Array.prototype.forEach.call(this.lstfreeSampleProduct,product=>{
                 delete product.DemoSampleQty;
              });
              console.log('lst FSP ',this.lstfreeSampleProduct);
@@ -588,7 +593,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
 
     clearProductSection(){
-        this.template.querySelectorAll('c-lookupcmp').forEach(element => {
+        Array.prototype.forEach.call(this.template.querySelectorAll('c-lookupcmp'),element => {
             element.clearAllselected();
             element.hitLimit = false;
             element.countItem = 0;
@@ -685,7 +690,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         console.log('FSM Id ',this.freesampling.Id)
         if(this.freesampling.Id!=''){
             this.navigateToListView(this.freesampling.Id);  
-        }      
+        }else{
+            window.history.back();
+        }     
     }
     handleMultipleCropSelected(event){
         let lst = event.detail;
@@ -708,7 +715,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     handleRemoveCrop(event){
         let lst = event.detail;
         let temp = [];
-        lst.forEach(ele=>{
+        Array.prototype.forEach.call(lst,ele=>{
             let obj = {
                 'Id':ele.recId,
                 'Name':ele.recName,
@@ -727,7 +734,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     handleMultiplePestSelected(event){
          let lst = event.detail;
          let temp = [];
-         lst.forEach(ele=>{
+         Array.prototype.forEach.call(lst,ele=>{
             let obj = {
                 'Id':ele.recId,
                 'Name':ele.recName,
@@ -744,7 +751,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     handleRemovePest(event){
         let lst = event.detail;
         let temp = [];
-        lst.forEach(ele=>{
+        Array.prototype.forEach.call(lst,ele=>{
             let obj = {
                 'Id':ele.recId,
                 'Name':ele.recName,

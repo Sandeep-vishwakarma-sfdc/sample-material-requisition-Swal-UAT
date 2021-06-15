@@ -69,6 +69,7 @@ public without sharing class SampleMaterialRequisition {
 
     @AuraEnabled
     public static Free_Sample_Management__c saveFreeSampleManagement(Free_Sample_Management__c freeSamplingObj){
+        System.debug('upsert fsm'+freeSamplingObj);
         upsert freeSamplingObj;
         if(freeSamplingObj.Status__c == 'Rejected' && freeSamplingObj.Sub_Status__c=='Rejected by HO Commercial'){
             //reCallApprovalProcess(freeSamplingObj.Id);
@@ -311,19 +312,19 @@ public without sharing class SampleMaterialRequisition {
         // if(fsm.Status__c=='Pending from Depot' && fsm.Sub_Status__c=='for PO Number'){
         //     lst_email.add(fsm.Depot__r.Depot_person__c);
         //     mail.setSubject('Material Requisition: '+fsm.Name+' (For PO Number)');
-        //     mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>Find below link for Material Requisition.</p><br><a href="https://uat-uplltd.cs117.force.com/MaterialRequisition?recordId='+obj_id+'&vf=D">Click here</a> to view Details </br><br></br><br><b>Thank You,</b></br><br><b>UPL TEAM</b></br>';
+        //     mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>Find below link for Material Requisition.</p><br><a href="http://uplltd.force.com/MaterialRequisition?recordId='+obj_id+'&vf=D">Click here</a> to view Details </br><br></br><br><b>Thank You,</b></br><br><b>UPL TEAM</b></br>';
         // }
 
         // PO Number for {FSP-001} material requisition is Updated. Please check below link to approve or reject the Material requisition
         if(fsm.Status__c=='Pending' && fsm.Sub_Status__c=='Pending from HO Commercial'){
             lst_email.add(fsm.Depot__r.HO_Commercial__c);
             mail.setSubject('Material Requisition: '+fsm.Name+' (Pending from HO Commercial)');
-            mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>PO Number for '+fsm.Name+' material requisition is updated. Please check below link to approve or reject the Material requisition</p><br><a href="https://uat-uplltd.cs117.force.com/MaterialRequisition?recordId='+obj_id+'&vf=H">Click here</a> to view Details </br><br></br><br><b>Thank You,</b></br><br><b>UPL TEAM</b></br>';
+            mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>PO Number for '+fsm.Name+' material requisition is updated. Please check below link to approve or reject the Material requisition</p><br><a href="http://uplltd.force.com/MaterialRequisition?recordId='+obj_id+'&vf=H">Click here</a> to view Details </br><br></br><br><b>Thank You,</b></br><br><b>UPL TEAM</b></br>';
         }
         if(fsm.Status__c=='Pending from Depot' && fsm.Sub_Status__c=='for Dispatch Details'){
             lst_email.add(fsm.Depot__r.Depot_person__c);
             mail.setSubject('Material Requisition: '+fsm.Name+' (For Dispatch Details)');
-            mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>' +fsm.Name+' material requisition is approved by HO Commercial. Please check below link to update the material dispatch date </p><br><a href="https://uat-uplltd.cs117.force.com/MaterialRequisition?recordId='+obj_id+'&vf=D">Click here</a> to view Details </br><br></br><br><b>Thank You,</b></br><br><b>UPL TEAM</b></br>';
+            mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>' +fsm.Name+' material requisition is approved by HO Commercial. Please check below link to update the material dispatch date </p><br><a href="http://uplltd.force.com/MaterialRequisition?recordId='+obj_id+'&vf=D">Click here</a> to view Details </br><br></br><br><b>Thank You,</b></br><br><b>UPL TEAM</b></br>';
         }
         if(fsm.Status__c=='Rejected' && fsm.Sub_Status__c=='Rejected by HO Commercial'){
             mail.setSubject('Material Requisition: '+fsm.Name+' (Rejected by HO Commercial)');

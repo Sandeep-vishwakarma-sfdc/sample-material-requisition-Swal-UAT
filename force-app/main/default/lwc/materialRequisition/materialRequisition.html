@@ -70,22 +70,22 @@
         <div class="slds-form-element">
           <label class="slds-form-element__label">Demo Plot Size (Acre)<span class="star">*</span></label>
           <div class="slds-form-element__control">
-            <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Acre" onchange={handleDemoAcre} value={freeSampleProduct.dose_acre} disabled={disable.demo_acre}></lightning-input>
-            <div class="star" if:true={validate.dose_acre}>Complete this field</div>
+            <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Acre" onchange={handleDemoSize} value={freeSampleProduct.demo_size} disabled={disable.demo_size}></lightning-input>
+            <div class="star" if:true={validate.demo_size}>Complete this field</div>
           </div>
         </div>
-      </div>
+      </div> 
 
       <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
         style="margin-top:12px;">
         <div class="slds-form-element">
           <label class="slds-form-element__label">Dose per Acre (Gram/ML)<span class="star">*</span></label>
           <div class="slds-form-element__control">
-            <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Size" onchange={handleDemoSize} value={freeSampleProduct.demo_size} disabled={disable.demo_size}></lightning-input>
-            <div class="star" if:true={validate.demo_size}>Complete this field</div>
+            <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Size" onchange={handleDemoAcre} value={freeSampleProduct.dose_acre} disabled={disable.dose_acre}></lightning-input>
+            <div class="star" if:true={validate.dose_acre}>Complete this field</div>
           </div>
         </div>
-      </div>
+      </div>  
 
 
       <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
@@ -200,8 +200,8 @@
           <template for:each={lstfreeSampleProduct} for:item="fsp">
           <tr key={fsp.Id} class="slds-hint-parent">
             <th class="slds-truncate center-ele" scope="row" data-label="PRODUCT" id={fsp.Id}>{fsp.product.Name}</th>
-            <th class="slds-truncate center-ele" data-label="Acre">{fsp.dose_acre}</th>
             <td class="slds-truncate center-ele" data-label="Size">{fsp.demo_size}</td>
+            <th class="slds-truncate center-ele" data-label="Acre">{fsp.dose_acre}</th>
             <td class="slds-truncate center-ele" data-label="Demo">{fsp.numberOfDemo}</td>
             <td class="slds-truncate center-ele" data-label="Demo Sample Qty (GM/ML)">{fsp.DemoSampleQty}</td>
             <td>
@@ -321,9 +321,10 @@
       </div>
 
       <div class="slds-align_absolute-center slds-p-top_small slds-p-horizontal--small slds-size--1-of-1"
-        style="padding-top:10px; margin-top:20px; margin-bottom:10px; border-top:1px solid #d8dde6;">
+        style="padding-top:10px; margin-top:20px; margin-bottom:50px; border-top:1px solid #d8dde6;">
         <lightning-button label="Save" icon-name="utility:save" icon-position="right" disabled={buttonmatrixobj.saveDisable} hidden={buttonmatrixobj.saveHidden} onclick={handleSaveMaterialRequisition}>
         </lightning-button>&nbsp;
+        
         <!-- <lightning-button label="Edit" icon-name="utility:edit" icon-position="right" disabled={buttonmatrixobj.editDisable} hidden={buttonmatrixobj.editHidden} onclick={handleEditAction}> 
         </lightning-button>&nbsp;-->
         <lightning-button label="Cancel" icon-name="utility:back" icon-position="right" disabled={buttonmatrixobj.cancelDisable} hidden={buttonmatrixobj.cancelHidden} onclick={handleBacktoRecord}>
