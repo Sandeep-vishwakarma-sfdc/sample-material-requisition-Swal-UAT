@@ -11,9 +11,11 @@
       <div if:true={is_TM} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3">
         <div class="slds-form-element" style="margin-top:12px;">
           <div class="slds-form-element__control">
-            <lightning-combobox name="Depot" label="Depot" value={freesampleObj.Depot__c} placeholder="Select Depot"
+            <label class="slds-form-element__label">Depot<span class="star">*</span></label>
+            <lightning-combobox name="Depot" label="Depot" variant="label-hidden" value={freesampleObj.Depot__c} placeholder="Select Depot"
               options={lstDepotOption} disabled={disable.Depot} onchange={handleChangeDepot}>
             </lightning-combobox>
+            <div class="star" if:true={validate.depot}>Depot not available</div>
           </div>
         </div>
       </div>

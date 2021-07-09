@@ -36,6 +36,7 @@ public without sharing class SampleMaterialRequisition {
         newfsm.SalesOrg__c = getSalesOrgCode().Id;
         newfsm.Zip_Code__c = '123-4567'; // Need to change
         newfsm.Status__c = 'Draft';
+        newfsm.Sub_Status__c = 'Draft';
         System.debug('New Free_Sample_Management__c created '+newfsm.Id);
         return newfsm;
     }
@@ -54,7 +55,7 @@ public without sharing class SampleMaterialRequisition {
 
     @AuraEnabled(cacheable=true)
     public static Territory_Distributor__c getManagers(){
-        Territory_Distributor__c territory = [SELECT Id, Name, Region__c,Region__r.RegionHead__c, TerritoryManager__c, SalesOrg__c, Zone__c,Zone__r.ZonalHead__c,Zone__r.ZMMUser__c FROM Territory_Distributor__c where TerritoryManager__c =:UserInfo.getUserId()];
+        Territory_Distributor__c territory = [SELECT Id, Name, Region__c,Region__r.RegionHead__c, TerritoryManager__c, SalesOrg__c, Zone__c,Zone__r.ZonalHead__c,Zone__r.ZMMUser__c,LastModifiedDate FROM Territory_Distributor__c where TerritoryManager__c =:UserInfo.getUserId() order by LastModifiedDate  DESC limit 1];
         return territory;
     }
 

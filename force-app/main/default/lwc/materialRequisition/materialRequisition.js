@@ -41,7 +41,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         crop:false,
         CropPest:false,
         material_dispatch_on:false,
-        po_number:false
+        po_number:false,
+        depot:false,
     }
     @track freesampleObj ={'Name':'','Depot':'','Depot__r':{'Name':''}};
     @track lstfreeSampleProduct = [];
@@ -98,7 +99,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         Rejected_by_HO_Commercial:'Rejected by HO Commercial',
         for_Dispatch_Details:'for Dispatch Details',
         Draft:'Draft',
-        none:''
+        none:'',
+        closed:'Closed'
     }
     profiles = {
         'territory_manager':'Territory Manager SWAL',
@@ -146,6 +148,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     renderedCallback(){
         console.log('Ho status ',this.ho_statusOption);
         // this.ho_statusOption= [{label:'Approve',value:'approve'},{label:'Reject',value:'reject'}];
+        
         console.log('RecId LWC',this.freesamplemanagementid,'VF ',this.externaluser);
         if(this.externaluser==Depot || this.externaluser==Ho_commercial){
             this.buttonmatrixobj.cancelHidden = true;
@@ -313,6 +316,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.freesampleObj = data;
         this.freesampling.Id = data.Id != undefined?data.Id:'';
         this.freesampling.Depot = data.Depot__c!=undefined?data.Depot__r.Name:'';
+        if(this.freesampling.Depot){
+            this.validate.depot = false;
+        }
         this.freesampling.status = data.Status__c!=undefined?data.Status__c:'';
         this.freesampling.substatus = data.Sub_Status__c!=undefined?data.Sub_Status__c:'';
         this.freesampling.po_number = data.PO_Number__c!=undefined?data.PO_Number__c:'';
@@ -347,6 +353,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         getDepot().then(data=>{
             console.log('Depot data ',data);
             this.lstDepotOption = [];
+            if(data.length==0){
+                this.validate.depot = true;
+            }
             if(data){
                 for (let i = 0; i < data.length; i++) {
                     this.lstDepotOption = [...this.lstDepotOption, { label: data[i].Depot__r.Name, value: data[i].Depot__c }];
@@ -357,6 +366,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                         this.freesampleObj.Depot__c = this.lstDepotOption[0].value;
                         this.freesampleObj.Depot_Person_Email_ID__c = data[0].Depot__r.Depot_person__c;
                         this.freesampleObj.HO_Commercial_Email_ID__c = data[0].Depot__r.HO_Commercial__c;
+                        this.validate.depot = false;
                     }
                 }
             }
@@ -371,6 +381,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         if(obj.Depot__c && obj!=undefined){
         this.freesampleObj.Depot_Person_Email_ID__c = obj.Depot__c?obj.Depot__r.Depot_person__c:'';
         this.freesampleObj.HO_Commercial_Email_ID__c = obj.Depot__c?obj.Depot__r.HO_Commercial__c:'';
+        this.validate.depot = false;
         }
         console.log('free sample Obj',this.freesampleObj);
     }
@@ -438,7 +449,16 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 this.validate.material_dispatch_on = true;
             }
         }else{
-            this.saveMaterialReq();
+            if(this.validate.depot){
+                if(this.externaluser){
+                    this.saveMaterialReq();
+                }else{
+                    console.log('Depot validation');
+                    this.showToastmessage('Error','Depot not available','error');
+                }
+            }else{
+                this.saveMaterialReq();
+            }
         }
     }
     else{
@@ -665,7 +685,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.validate.material_dispatch_on = false;
         }
         this.freesampleObj.Status__c = this.status.Closed;
-        this.freesampleObj.Sub_Status__c = this.sub_status.none;
+        this.freesampleObj.Sub_Status__c = this.sub_status.closed;
         console.log('Material Date',this.freesampleObj.Material_Dispatched_Date__c);
     }
 
