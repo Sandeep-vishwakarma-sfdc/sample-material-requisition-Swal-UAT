@@ -15,7 +15,9 @@ import getProfile from '@salesforce/apex/SampleMaterialRequisition.getProfile';
 import approveRecord from '@salesforce/apex/SampleMaterialRequisition.approveRecord';
 import rejectRecord from '@salesforce/apex/SampleMaterialRequisition.rejectRecord';
 import getCurrentUser from '@salesforce/apex/SampleMaterialRequisition.getCurrentUser';
+import getProductNRV from '@salesforce/apex/SampleMaterialRequisition.getProductNRV';
 import reCallApprovalProcess from '@salesforce/apex/SampleMaterialRequisition.reCallApprovalProcess';
+import updateFsp from '@salesforce/apex/SampleMaterialRequisition.updateFSP';
 
 
 const Depot = 'D';
@@ -31,7 +33,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     @track crop_lst = []; 
     @track pest = {'Id':'','Name':''};
     @track pest_lst = [];
-    @track disable = {'Product':false,'Crop':true,'Pest':true,'Depot':false,'Status':true,'sub_status':true,'po_number':true,'material_dispatch_on':true,'demo_acre':false,'demo_size':false,'number_of_size':false,'approve_by_rm':true,'approve_by_zml':true,'approve_by_hom':true,'ho_comment':true,'ho_status':true};
+    @track disable = {'Product':false,'Crop':true,'Pest':true,'Depot':false,'Status':true,'sub_status':true,'po_number':true,'material_dispatch_on':true,'demo_acre':false,'demo_size':false,'number_of_size':false,'approve_by_rm':true,'approve_by_zml':true,'approve_by_hom':true,'ho_comment':true,'ho_status':true,'comment':true,'fspItemDemoSize':true,'fspItemDemoAcre':true,'fspItemNumberOfDemo':true};
     @track freesampling = {'Id':'','Depot':'','status':'','substatus':'','po_number':'','material_dispatch_on':''};
     @track validate = {
         product:false,
@@ -44,15 +46,17 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         po_number:false,
         depot:false,
     }
+    productItemValidateCount= 0;
     @track freesampleObj ={'Name':'','Depot':'','Depot__r':{'Name':''}};
     @track lstfreeSampleProduct = [];
     @track freeSampleProduct = {
         'Id':'',
-        'product':{'Id':'','Name':'','crop':[],'CropPest':[]},
+        'product':{'Id':'','Name':'','NRV':'','crop':[],'CropPest':[]},
         'dose_acre':'',
         'demo_size':'',
         'numberOfDemo':'',
-        'DemoSampleQty':''
+        'DemoSampleQty':'',
+        'material_value':''
     };
     @track fakeId = 1;
     @track hasRendered = {'Freesampling':false,'spinner':false};
@@ -72,6 +76,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
     @track demo_sample_formula = '';
     @track salesOrg = '';
+    approvalClicked = false;
+    thirdApprovalChecked = false;
+    thresholdValue = '';
     submitForApprovalflag = false;
     actionbyHo = false; 
     is_TM = false;
@@ -104,6 +111,10 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
     profiles = {
         'territory_manager':'Territory Manager SWAL',
+        // 'territory_manager':'Territory Manager for Swal', //Test
+        'FMM_Users':'FMM USER SWAL',
+        // 'regional_and_zonal_manager':'Regional/ Zonal for SWAL', //Test
+        'Channel_Deployment_Manager_SWAL':'Channel Deployment Manager SWAL(Onboarding)',
         'regional_and_zonal_manager':'Regional/Zonal Manager SWAL',
         'Ho_commercial':'Marketing HO Swal'
     }
@@ -118,7 +129,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             console.log('salesorg ',data);
             this.salesOrgCode = data.Sales_Org_Code__c;
             this.salesOrg = data.Id;
-            this.product_filter = `Sales_Org_Code__c='${this.salesOrgCode}' order by Name ASC limit 15`;
+            this.product_filter = `Sales_Org_Code__c='${this.salesOrgCode}' and isActive=true order by Name ASC limit 15`;
             this.crop_filter = `Sales_Org_Code__c='1000' order by Name ASC limit 15`;
             this.pest_filter =  `Name!=null order by Name ASC limit 15`;
         }
@@ -133,6 +144,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.profile_name = data;
             if(this.profile_name==this.profiles.territory_manager){
                 this.is_TM = true;
+                this.disable.comment = false;
             }
         }
     }
@@ -144,16 +156,15 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         }
     }
     
+    connectedCallback(){
+        
+    }
 
     renderedCallback(){
-        console.log('Ho status ',this.ho_statusOption);
-        // this.ho_statusOption= [{label:'Approve',value:'approve'},{label:'Reject',value:'reject'}];
         
-        console.log('RecId LWC',this.freesamplemanagementid,'VF ',this.externaluser);
         if(this.externaluser==Depot || this.externaluser==Ho_commercial){
             this.buttonmatrixobj.cancelHidden = true;
         }
-        console.log('Button Marix',this.buttonmatrixobj);
         if(!this.hasRendered.Freesampling){
             
             if(this.freesamplemanagementid==''){
@@ -182,8 +193,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
 
     externalUserButtonMatrix(){
-        console.log('Status ',this.freesampleObj.Status__c,'Sub Status ',this.freesampleObj.Sub_Status__c)
-
+        
         if(this.freesampleObj.Status__c==this.status.Draft || this.freesampleObj.Status__c==this.status.reject){
             this.buttonmatrixobj.approval_histroyDisable = this.freesampleObj.Status__c==this.status.Draft?true:false;
             if(this.profile_name==this.profiles.territory_manager){
@@ -206,9 +216,12 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.is_TM = false;
             this.buttonmatrixobj.addbtn = true;
             this.disablefield(true,true,true,true,true,true);
-            if(this.profile_name==this.profiles.regional_and_zonal_manager){
+            console.log('Test 218 ',this.profile_name==this.profiles.regional_and_zonal_manager || this.profile_name == this.profiles.FMM_Users || this.profile_name==this.profiles.Channel_Deployment_Manager_SWAL);
+            if(this.profile_name==this.profiles.regional_and_zonal_manager || this.profile_name == this.profiles.FMM_Users || this.profile_name==this.profiles.Channel_Deployment_Manager_SWAL){
+                console.log('Test 220',this.freesampleObj.Office_Manager__c==this.loggedinuser)
                 if(this.freesampleObj.Office_Manager__c==this.loggedinuser){
                     this.disableButton(true,true,true,false,false,true);
+                    this.disableFspItems(false,false,false);
                 }else{
                     this.disableButton(true,true,true,true,true,true);
                 }
@@ -220,7 +233,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.is_TM = false;
             this.buttonmatrixobj.addbtn = true;
             this.disablefield(true,true,true,true,true,true);
-            if(this.profile_name==this.profiles.regional_and_zonal_manager){
+            if(this.profile_name==this.profiles.regional_and_zonal_manager  || this.profile_name == this.profiles.FMM_Users || this.profile_name==this.profiles.Channel_Deployment_Manager_SWAL){
                 if(this.freesampleObj.Sales_Assistant__c ==this.loggedinuser){
                     this.disableButton(true,true,true,false,false,true);
                 }else{
@@ -311,9 +324,21 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         }
         
     }
-
+    disableFspItems(demoAcre,demoSize,noOfDemo){
+        this.disable.fspItemDemoAcre = demoAcre;
+        this.disable.fspItemDemoSize = demoSize;
+        this.disable.fspItemNumberOfDemo = noOfDemo;
+    }
     getFreeSampleManagement(data){
         this.freesampleObj = data;
+        console.log('getFreeSampleManagement ',data);
+        if(data.Threshold_value__c){
+            this.thresholdValue = data.Threshold_value__c;
+        }else if(data.Territory__c){
+            this.thresholdValue = data.Territory__r.Zone__r!=undefined?data.Territory__r.Zone__r.Threshold_value__c:'';
+            this.thresholdValue = this.thresholdValue==undefined?0:this.thresholdValue;
+        }
+        console.log('thresholdValue $$$',this.thresholdValue);
         this.freesampling.Id = data.Id != undefined?data.Id:'';
         this.freesampling.Depot = data.Depot__c!=undefined?data.Depot__r.Name:'';
         if(this.freesampling.Depot){
@@ -327,6 +352,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.freesampling.X2nd_Approval_Date_Time__c = data.X2nd_Approval_Date_Time__c!=undefined?this.formatAMPM(data.X2nd_Approval_Date_Time__c):'';
         this.freesampling.X3rd_Approval_Date_Time__c = data.X3rd_Approval_Date_Time__c!=undefined?this.formatAMPM(data.X3rd_Approval_Date_Time__c):'';
         this.freesampling.Ho_comment__c = data.Ho_comment__c!=undefined?data.Ho_comment__c:'';
+        this.freesampling.comment__c = data.Comment__c!=undefined?data.Comment__c:'';
         
         console.log('FSM obj',this.freesampleObj);
         if(this.freesamplemanagementid!=''){
@@ -336,16 +362,31 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 this.lstfreeSampleProduct = fsp;
                 Array.prototype.forEach.call(this.lstfreeSampleProduct,product=>{
                     let demosamplyqty = product.dose_acre*product.demo_size*product.numberOfDemo;
-                    let demosampleQtyLtrs = Number(demosamplyqty)>0?demosamplyqty/1000:0;
+                    let demosampleQtyLtrs = Number(demosamplyqty)>0?(demosamplyqty/1000).toFixed(2):0;
                     product.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
+                    // if(product.material_value){
+                    // product.thirdApprovalChecked = Number(product.material_value)>Number(this.thresholdValue)?true:false
+                    // }
+
                 });
                 this.productSection = this.lstfreeSampleProduct.length > 0?true:false;
             }).catch(err=>console.log('Err ',err));
         }
         if(this.profile_name==this.profiles.territory_manager){
             getManagers().then(data=>{
+                console.log('Managers ',data);
                 this.freesampleObj.Territory__c = data.Id!=undefined?data.Id:'';
-                this.freesampleObj.Office_Manager__c = data.Region__c!=undefined?data.Region__r.RegionHead__c:'';
+                if(data.Region__c){
+                    if(data.Region__r.FMM_User__c && data.Region__r.FMM_User__r.IsActive){
+                        this.freesampleObj.Office_Manager__c = data.Region__r.FMM_User__c;
+                    }else{
+                        if(data.Region__r.RegionHead__c && data.Region__r.RegionHead__r.IsActive)
+                        this.freesampleObj.Office_Manager__c = data.Region__c!=undefined?data.Region__r.RegionHead__c:'';
+                    }
+                }
+                if(data.Zone__c){
+                    this.thresholdValue = data.Zone__r.Threshold_value__c;
+                }
                 this.freesampleObj.Sales_Assistant__c  = data.Zone__c!=undefined?data.Zone__r.ZMMUser__c:'';
             }).catch(err=>console.log('ERR getManagers ',err));
         }
@@ -354,7 +395,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             console.log('Depot data ',data);
             this.lstDepotOption = [];
             if(data.length==0){
-                this.validate.depot = true;
+                if(this.profile_name==this.profiles.territory_manager){
+                    this.validate.depot = true;
+                }
             }
             if(data){
                 for (let i = 0; i < data.length; i++) {
@@ -407,7 +450,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 this.disable.Crop = true;
                 this.disable.Pest = true;
             }else{
-                this.showToastmessage('Warning','Duplicate product Not allowed','warning');
+                // this.showToastmessage('Warning','Duplicate product Not allowed','warning');
+                this.showCustomToast('Warning','Duplicate product Not allowed','warning');
                 this.disable.Crop = true;
                 this.disable.Pest = true;
             }
@@ -423,8 +467,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         // console.log('Add product',str);
         console.log('this.freesampling obj',this.freesampleObj);
         if(this.freesampleObj.Status__c==this.status.Pending_from_Depot && this.freesampleObj.Sub_Status__c==this.sub_status.for_PO_Number){
-            if(this.freesampleObj.PO_Number__c!=undefined){
-                if(this.freesampleObj.PO_Number__c!=''){
+            if(this.freesampleObj.PO_Number__c!=undefined && this.freesampleObj.PO_Number__c.toString().trim()){
+                if(this.freesampleObj.PO_Number__c!='' && this.freesampleObj.PO_Number__c.toString().trim()){
                     this.showCustomToast('Success','Success','success');
                     this.saveMaterialReq();
                 }else{
@@ -451,43 +495,79 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         }else{
             if(this.validate.depot){
                 if(this.externaluser){
-                    this.saveMaterialReq();
+                    if(this.freesampleObj.PO_Number__c.toString().trim()){
+                        this.saveMaterialReq();
+                    }
                 }else{
                     console.log('Depot validation');
-                    this.showToastmessage('Error','Depot not available','error');
+                    // this.showToastmessage('Error','Depot not available','error');
+                    this.showCustomToast('Error','Depot not available','error');
                 }
             }else{
-                this.saveMaterialReq();
+                if(this.freesampleObj.PO_Number__c.toString().trim()){
+                    this.saveMaterialReq();
+                }
             }
         }
     }
     else{
-            this.showToastmessage('Error','Please add altest one product','error');
+        // this.showToastmessage('Error','Please add altest one product','error');
+        this.showCustomToast('Error','Please add altest one product','error');
         }
     }
 
     saveMaterialReq(){
-        this.freesampleObj.SalesOrg__c = this.salesOrg;
+        // this.freesampleObj.SalesOrg__c = this.salesOrg;
+        this.freesampleObj.Sales_Org__c = this.salesOrg;
+        if(Number(this.thresholdValue)){
+            this.freesampleObj.Threshold_value__c  = this.thresholdValue;
+        }else{
+            this.thresholdValue = 0;
+            this.freesampleObj.Threshold_value__c  = this.thresholdValue;
+        }
+        let countThirdApprovalCheck = 0
+        this.lstfreeSampleProduct.forEach(product=>{
+            console.log('material value > threshold value',Number(product.material_value),' > ',Number(this.thresholdValue))
+            if(Number(product.material_value)>Number(this.thresholdValue)){
+                countThirdApprovalCheck++;
+            }
+        });
+        console.log('countThirdApprovalCheck ',countThirdApprovalCheck);
+        if(countThirdApprovalCheck>0){
+            if(this.freesampleObj.Status__c==this.status.reject && this.freesampleObj.Sub_Status__c==this.sub_status.Rejected_by_HO_Commercial){
+                this.freesampleObj.Need_Marketing_HO_Approval__c = false;
+            }else{
+            this.freesampleObj.Need_Marketing_HO_Approval__c = true;
+            }
+        }else{
+            this.freesampleObj.Need_Marketing_HO_Approval__c = false;
+        }
         console.log('FSM new ',this.freesampleObj);
         saveFreeSampleManagement({freeSamplingObj:this.freesampleObj}).then(fsm=>{
              Array.prototype.forEach.call(this.lstfreeSampleProduct,product=>{
                 delete product.DemoSampleQty;
+                // if(product.thirdApprovalChecked){
+                //     delete product.thirdApprovalChecked;
+                // }
              });
              console.log('lst FSP ',this.lstfreeSampleProduct);
 
             let str = JSON.stringify(this.lstfreeSampleProduct); 
             this.freesampleObj = fsm;
             console.log('NEW FSM ID -->',fsm.Id);
+            if(this.externaluser!=''){
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            }
+        if(this.profile_name==this.profiles.territory_manager){    
         addProduct({product:str,freeSamplingId:fsm.Id}).then(data=>{     
             console.log('Material Requisition ',data);
             if(data){
-                if(this.externaluser!=''){
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                }else{
-                    this.showToastmessage('Success', 'Material requisition created', 'success');
-                }
+                    if(this.approvalClicked==false){
+                        this.showCustomToast('Success', 'Material requisition created', 'success');
+                        // this.showToastmessage('Success', 'Material requisition created', 'success');
+                    }
                 if(this.submitForApprovalflag==true){
                     console.log('SUBMIT FOR APPROVAL CALLED------->');
                     console.log('Id to update',this.freesampleObj.Id);
@@ -505,15 +585,22 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                     console.log('SAVE ACTION CALLED');
                     deleteFreeSampleProduct({freeSampleProductIds:this.deleteProductId}).then(mesg=>{
                         console.log(mesg);
-                        this.navigateToListView(fsm.Id);
+                        console.log('Approved Clicked ',this.approvalClicked)
+                        if(this.approvalClicked==false){
+                            console.log('@@@@@ Inside  Approved Clicked')
+                            this.navigateToListView(fsm.Id);
+                        }
                     }).catch(err=>console.log('Unable to Delete Record ',err));
                 }
+
             }
         
         }).catch(err=>{
             console.log('Exception in adding Product ',err)
-            this.showToastmessage('Error', 'Unable to create Material requisition', 'error');
+            // this.showToastmessage('Error', 'Unable to create Material requisition', 'error');
+            this.showCustomToast('Error', 'Unable to create Material requisition', 'error');
         });
+        }
         if(this.externaluser==Ho_commercial){
             console.log(`this.freesampleObj.Status__c ${this.freesampleObj.Status__c} this.freesampleObj.Sub_Status__c ${this.freesampleObj.Sub_Status__c}`);
             if(this.freesampleObj.Status__c ==this.status.reject && this.freesampleObj.Sub_Status__c==this.sub_status.Rejected_by_HO_Commercial){
@@ -536,6 +623,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         if(this.ho_status=='reject'){
             this.freesampleObj.Status__c = this.status.reject;
             this.freesampleObj.Sub_Status__c = this.sub_status.Rejected_by_HO_Commercial;
+            this.freesampleObj.Need_Marketing_HO_Approval__c = false;
         }
     }
 
@@ -543,29 +631,59 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.submitForApprovalflag = true;
         this.handleSaveMaterialRequisition();
     }
+    validateFspItem(){
+        this.template.querySelectorAll('.fsp-item').forEach(ele=>{
+            if(Number(ele.value)<0){
+            console.log('ele ',ele.value)
+            this.productItemValidateCount++;
+           }
+        })
+    }
     handleApprove(){
         console.log('FSM id',this.freesampleObj.Id);
-        approveRecord({fsmid:this.freesampleObj.Id,comment:'Approve'}).then(isSuccess=>{
-            if(isSuccess){
-                this.showToastmessage('Success', 'Approved', 'success');
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
+        this.productItemValidateCount = 0;
+        this.approvalClicked = true;
+        this.handleSaveMaterialRequisition();
+        this.validateFspItem();
+        if(this.freesampleObj.Office_Manager__c==this.loggedinuser){
+            if(Number(this.productItemValidateCount)==0){
+            updateFsp({lstFsp:JSON.stringify(this.lstfreeSampleProduct)}).then(data=>{
+                console.log('updateFsp ',data);
+            }).catch(err=> console.log('Error uploading product',err))
             }else{
-                this.showToastmessage('Error', 'Unable to approve', 'error');
+                // this.showToastmessage('Error','Invalid product item','error');
+                this.showCustomToast('Error','Invalid product item','error');
             }
-        });
+        }
+        if(Number(this.productItemValidateCount)==0){
+         setTimeout(() => {
+            approveRecord({fsmid:this.freesampleObj.Id,comment:'Approve'}).then(isSuccess=>{
+                if(isSuccess){
+                    // this.showToastmessage('Success', 'Approved', 'success');
+                    this.showCustomToast('Success', 'Approved', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                }else{
+                    // this.showToastmessage('Error', 'Unable to approve', 'error');
+                    this.showCustomToast('Error', 'Unable to approve', 'error');
+                }
+            });
+         }, 500); 
+        }
     }
     handleReject(){
         console.log('FSM id',this.freesampleObj.Id);
         rejectRecord({fsmid:this.freesampleObj.Id,comment:'Reject'}).then(isSuccess=>{
             if(isSuccess){
-                this.showToastmessage('Success', 'Rejected', 'success');
+                // this.showToastmessage('Success', 'Rejected', 'success');
+                this.showCustomToast('Success', 'Rejected', 'success');
                 setTimeout(() => {
                     location.reload();
                 }, 1000);
             }else{
-                this.showToastmessage('Error', 'Unable to reject', 'error');
+                // this.showToastmessage('Error', 'Unable to reject', 'error');
+                this.showCustomToast('Error', 'Unable to reject', 'error');
             }
         });
     }
@@ -626,6 +744,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.freeSampleProduct.demo_size= '';
         this.freeSampleProduct.numberOfDemo = ''; 
         this.freeSampleProduct.DemoSampleQty = '';
+        this.freeSampleProduct.material_value = '';
      
     }
 
@@ -636,47 +755,107 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.freesampleObj.Ho_comment__c = this.ho_comment;
         }
     }
+    handleChangeComment(event){
+        if(this.profile_name==this.profiles.territory_manager){
+            this.freesampleObj.Comment__c = event.target.value;
+        }
+    }
 
     handleDemoAcre(event){
         if(this.hasValue(event.target.value)){
-            this.freeSampleProduct.dose_acre = event.target.value;
-            this.validate.dose_acre = false;
+            if(Number(event.target.value)>=0){
+                this.freeSampleProduct.dose_acre = event.target.value;
+                this.validate.dose_acre = false;
+            }
         }else{
             this.freeSampleProduct.dose_acre = '';
         }
         let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
-        let demosampleQtyLtrs = Number(demosampleQty)>0?demosampleQty/1000:0;
+        let demosampleQtyLtrs = Number(demosampleQty)>0?(demosampleQty/1000).toFixed(2):0;
         this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
+        this.freeSampleProduct.material_value = (Number(this.freeSampleProduct.DemoSampleQty) * Number(this.freeSampleProduct.productNRV)).toFixed(2);
     }
     handleDemoSize(event){
         if(this.hasValue(event.target.value)){
-            this.freeSampleProduct.demo_size = event.target.value;
-            this.validate.demo_size = false;
+            if(Number(event.target.value)>=0){
+                this.freeSampleProduct.demo_size = event.target.value;
+                this.validate.demo_size = false;
+            }
         }else{
             this.freeSampleProduct.demo_size = '';
         }
         let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
-        let demosampleQtyLtrs = Number(demosampleQty)>0?demosampleQty/1000:0;
+        let demosampleQtyLtrs = Number(demosampleQty)>0?(demosampleQty/1000).toFixed(2):0;
         this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
+        this.freeSampleProduct.material_value = (Number(this.freeSampleProduct.DemoSampleQty) * Number(this.freeSampleProduct.productNRV)).toFixed(2);
     }
+    handleFspItemDemoSize(event){
+        console.log('FSP id',event.target.dataset.id)
+        if(Number(event.target.value)>=0){
+            if(event.target.dataset.id){
+                let fsp = this.lstfreeSampleProduct.find(ele => ele.Id==event.target.dataset.id);
+                fsp.demo_size = event.target.value;
+                let demosampleQty = fsp.dose_acre*fsp.demo_size*fsp.numberOfDemo;
+                let demosampleQtyLtrs = Number(demosampleQty)>0?(demosampleQty/1000).toFixed(2):0;
+                fsp.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
+                fsp.material_value = (Number(fsp.DemoSampleQty) * Number(fsp.product.NRV)).toFixed(2);
+            }
+            console.log('updated demosize',this.lstfreeSampleProduct); 
+        }
+    }
+    handleFspItemDoseAcre(event){
+        if(Number(event.target.value)>=0){
+            if(event.target.dataset.id){
+                let fsp = this.lstfreeSampleProduct.find(ele => ele.Id==event.target.dataset.id);
+                fsp.dose_acre = event.target.value;
+                let demosampleQty = fsp.dose_acre*fsp.demo_size*fsp.numberOfDemo;
+                let demosampleQtyLtrs = Number(demosampleQty)>0?(demosampleQty/1000).toFixed(2):0;
+                fsp.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
+                fsp.material_value = (Number(fsp.DemoSampleQty) * Number(fsp.product.NRV)).toFixed(2);
+            }
+            console.log('updated dose_acre',this.lstfreeSampleProduct); 
+        }
+    }
+    handlefspNumberOfDemo(event){
+        if(Number(event.target.value)>=0){
+            if(event.target.dataset.id){
+                let fsp = this.lstfreeSampleProduct.find(ele => ele.Id==event.target.dataset.id);
+                fsp.numberOfDemo = event.target.value;
+                let demosampleQty = fsp.dose_acre*fsp.demo_size*fsp.numberOfDemo;
+                let demosampleQtyLtrs = Number(demosampleQty)>0?(demosampleQty/1000).toFixed(2):0;
+                fsp.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
+                fsp.material_value = (Number(fsp.DemoSampleQty) * Number(fsp.product.NRV)).toFixed(2);
+            }
+            console.log('updated numberOfDemo',this.lstfreeSampleProduct); 
+        }
+    }
+
     handleNumberOfDemo(event){
         if(this.hasValue(event.target.value)){
-            this.freeSampleProduct.numberOfDemo = event.target.value;
-            this.validate.numberOfDemo = false;
+            if(Number(event.target.value)>=0){
+                this.freeSampleProduct.numberOfDemo = event.target.value;
+                this.validate.numberOfDemo = false;
+            }
         }else{
             this.freeSampleProduct.numberOfDemo = '';
         }
         let demosampleQty = this.freeSampleProduct.dose_acre*this.freeSampleProduct.demo_size*this.freeSampleProduct.numberOfDemo;
-        let demosampleQtyLtrs = Number(demosampleQty)>0?demosampleQty/1000:0;
+        let demosampleQtyLtrs = Number(demosampleQty)>0?(demosampleQty/1000).toFixed(2):0;
         this.freeSampleProduct.DemoSampleQty = Number.isNaN(Number(demosampleQtyLtrs))?0:demosampleQtyLtrs;
+        this.freeSampleProduct.material_value = (Number(this.freeSampleProduct.DemoSampleQty) * Number(this.freeSampleProduct.productNRV)).toFixed(2);
     }
     handleChangePoNumber(event){
         let val = event.target.value;
+        val = val.toString().trim();
+        console.log('846 ',val+' len ',val.length);
         if(val){
             this.freesampleObj.PO_Number__c = val;
             this.freesampleObj.Status__c = this.status.Pending;
             this.freesampleObj.Sub_Status__c = this.sub_status.Pending_from_HO_Commercial;
             this.validate.po_number = false;
+        }else{
+            this.freesampleObj.PO_Number__c = '';
+            this.validate.po_number = true;
         }
     }
     handleChangeMaterialDispatch(event){
@@ -693,6 +872,10 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         console.log(`handleProductSelected ${event.detail.recId}-${event.detail.recName}`);
         this.freeSampleProduct.product.Id = event.detail.recId;
         this.freeSampleProduct.product.Name = event.detail.recName;
+        getProductNRV({prodid:this.freeSampleProduct.product.Id}).then(nrv=>{
+            this.freeSampleProduct.product.NRV = nrv;
+            this.freeSampleProduct.productNRV = nrv;
+        }).catch(err=>console.log('Error getting product NRV'))
         if(this.freeSampleProduct.product.Id){
             this.disable.Crop = false;
             this.disable.Pest = false;
@@ -703,6 +886,8 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         console.log('Removing product ',this.product);
         this.freeSampleProduct.product.Id = '';
         this.freeSampleProduct.product.Name = '';
+        this.freeSampleProduct.product.NRV = '';
+        this.freeSampleProduct.productNRV = '';
         this.disable.Crop = true;
         this.disable.Pest = true;
     }
@@ -786,6 +971,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.pest.Name = '';
         console.log('Pest ',this.pest_lst,'Removing pest',event.detail);
     }
+  
 
     showToastmessage(title, message, varient) {
         this.dispatchEvent(
@@ -798,6 +984,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
 
     navigateToListView(rec_id) {
+        console.log('@@@@@@@ Record Id in NavigationMixIn',rec_id)
+        window.open('/'+rec_id,'_self');
+        /* commented on 28-07-2021
         this[NavigationMixin.Navigate]({
             type: 'standard__recordPage',
             attributes: {
@@ -805,7 +994,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 objectApiName: 'Free_Sample_Management__c', // objectApiName is optional
                 actionName: 'view'
             }
-        });
+        });*/
     }
 // comment third
     disablefield(product,demo_acre,demo_size,num_size,crop,pest){
@@ -828,7 +1017,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
      formatAMPM(date) {
          date = new Date(date);
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun","Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        let day = date.getDay();
+        let day = date.getDate();
         let month = date.getMonth();
         let year = date.getFullYear();
         let hours = date.getHours();
@@ -846,10 +1035,19 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.customToast.showToast = true;
         this.customToast.message = messg;
         this.customToast.title = title;
-        this.customToast.varient = varient;
+        let color = 'white';
+        //background-color: green
+        if(varient=='success'){
+            color = 'background-color: #28a754';
+        }else if(varient == 'warning'){
+            color = 'background-color: #ffc107';
+        }else if(varient == 'error'){
+            color = 'background-color: #dc3545';
+        }
+        this.customToast.varient = color;
         setTimeout(() => {
             this.customToast.showToast = false;
-        }, 1000);
+        }, 2000);
       }
     
 }

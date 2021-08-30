@@ -83,7 +83,7 @@
         <div class="slds-form-element">
           <label class="slds-form-element__label">Dose per Acre (Gram/ML)<span class="star">*</span></label>
           <div class="slds-form-element__control">
-            <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Size" onchange={handleDemoAcre} value={freeSampleProduct.dose_acre} disabled={disable.dose_acre}></lightning-input>
+            <lightning-input type="number"  step="any" variant="label-hidden" label="Demo Size" onchange={handleDemoAcre} value={freeSampleProduct.dose_acre} disabled={disable.demo_acre}></lightning-input>
             <div class="star" if:true={validate.dose_acre}>Complete this field</div>
           </div>
         </div>
@@ -115,7 +115,9 @@
       <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
         style="margin-top:12px;">
         <div class="slds-form-element">
+          <label class="slds-form-element__label">Value</label>
           <div class="slds-form-element__control">
+            <lightning-input type="text"  step="any" variant="label-hidden" label="Value" disabled value={freeSampleProduct.material_value} ></lightning-input>
           </div>
         </div>
       </div>
@@ -187,6 +189,9 @@
               <div class="slds-truncate center-ele">Demo Sample Qty(Kg/Ltrs)</div>
             </th>
             <th class="slds-is-sortable" scope="col">
+              <div class="slds-truncate center-ele">Value</div>
+            </th>
+            <th class="slds-is-sortable" scope="col">
               <div class="slds-truncate ">Target Crop</div>
             </th>
             <th class="slds-is-sortable" scope="col">
@@ -202,10 +207,11 @@
           <template for:each={lstfreeSampleProduct} for:item="fsp">
           <tr key={fsp.Id} class="slds-hint-parent">
             <th class="slds-truncate center-ele" scope="row" data-label="PRODUCT" id={fsp.Id}>{fsp.product.Name}</th>
-            <td class="slds-truncate center-ele" data-label="Size">{fsp.demo_size}</td>
-            <th class="slds-truncate center-ele" data-label="Acre">{fsp.dose_acre}</th>
-            <td class="slds-truncate center-ele" data-label="Demo">{fsp.numberOfDemo}</td>
+            <td class="slds-truncate center-ele" data-label="Size"><lightning-input class="fsp-item" type="number"  step="any" variant="label-hidden" data-id={fsp.Id}  disabled={disable.fspItemDemoSize} value={fsp.demo_size} onchange={handleFspItemDemoSize} ></lightning-input></td>
+            <th class="slds-truncate center-ele" data-label="Acre"><lightning-input class="fsp-item" type="number"  step="any" variant="label-hidden" data-id={fsp.Id} disabled={disable.fspItemDemoAcre} value={fsp.dose_acre} onchange={handleFspItemDoseAcre}></lightning-input></th>
+            <td class="slds-truncate center-ele" data-label="Demo"><lightning-input class="fsp-item" type="number"  step="any" variant="label-hidden" data-id={fsp.Id} disabled={disable.fspItemNumberOfDemo} value={fsp.numberOfDemo} onchange={handlefspNumberOfDemo}></lightning-input></td>
             <td class="slds-truncate center-ele" data-label="Demo Sample Qty (GM/ML)">{fsp.DemoSampleQty}</td>
+            <td class="slds-truncate center-ele" data-label="Value">{fsp.material_value}</td>
             <td>
             <template for:each={fsp.product.crop} for:item="crop">
               <tr key={crop.Id} class="slds-truncate" data-label="Target Crop">
@@ -270,7 +276,7 @@
         style="margin-top:12px;">
         <div class="slds-form-element">
           <div class="slds-form-element__control">
-            <lightning-input type="text" name="input1" value={freesampling.X1st_Approval_Date_Time__c} label="Approved by RM On"  disabled={disable.approve_by_rm}></lightning-input>
+            <lightning-input type="text" name="input1" value={freesampling.X1st_Approval_Date_Time__c} label="Approved by FMM/RM On"  disabled={disable.approve_by_rm}></lightning-input>
           </div>
         </div>
       </div>
@@ -318,6 +324,15 @@
               options={ho_statusOption} disabled={disable.ho_status} onchange={handleChangeHoStatus} >
             </lightning-combobox>
             <div class="star" if:true={validate.ho_status}>Complete this field</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+        style="margin-top:12px;">
+        <div class="slds-form-element">
+          <div class="slds-form-element__control">
+            <lightning-input type="text" name="input1" label="Comment" value={freesampling.comment__c} onchange={handleChangeComment} disabled={disable.comment}></lightning-input>
           </div>
         </div>
       </div>
@@ -393,5 +408,11 @@
   <!-- <div if:true={customToast.showToast}>
      <c-custom-toast message={customToast.message} title={customToast.title} variant={customToast.varient}></c-custom-toast>
   </div> -->
+  <div if:true={customToast.showToast}>
+    <div class="alert" style={customToast.varient}>
+      <span class="closebtn">&times;</span> 
+      <strong>{customToast.title}</strong> {customToast.message}
+    </div>
+ </div>
 <!-- custom end toast mesg -->
 </template>
