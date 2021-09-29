@@ -14,9 +14,10 @@ public without sharing class SampleMaterialRequisition {
     }
 
     @AuraEnabled
-    public static string getUserCountry(){
-        String country =  [select Id,Name,Country from User where Id=:UserInfo.getUserId()].Country;
-        return String.isEmpty(country)?'externalUser':country;
+    public static User getUserCountry(){
+        List<User> lstusr =  [select Id,Name,Country,profile.name from User where Id=:UserInfo.getUserId()];
+        User usr = lstusr[0];
+        return usr;
     }
 
     @AuraEnabled(cacheable=true)
@@ -332,9 +333,9 @@ public without sharing class SampleMaterialRequisition {
         List<Free_Sampling_Crop_Pest__c> lst_cropPest = [select Id,Name,Product__c,Free_Sampling__c,RecordType.Name,Product__r.Name,Target_Crop__r.Name,Target_Pest__r.Name from Free_Sampling_Crop_Pest__c where Free_Sampling__c=:obj_id];
 
         System.debug('obj_id '+obj_id);
-        // String url = 'http://uplltd.force.com/MaterialRequisition'; production
-        String url = 'https://uat-uplltd.cs117.force.com/MaterialRequisition'; //UAT
-        // String url = 'https://upltest-uplltd.cs57.force.com/MaterialRequisition'; test
+        String url = 'http://uplltd.force.com/MaterialRequisition'; //production
+        // String url = 'https://uat-uplltd.cs117.force.com/MaterialRequisition'; //UAT
+        // String url = 'https://upltest-uplltd.cs57.force.com/MaterialRequisition'; //test
         String mailbody = '';
         Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
         List<String> lst_email = new List<String>();

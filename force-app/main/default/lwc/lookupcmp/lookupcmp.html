@@ -1,0 +1,111 @@
+<template>
+    <div class="">
+        <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12" style="padding:0px">
+           
+            <div style=" border-radius: 5px;">
+                <div if:true={is_multiple} class="hori">
+                    <template for:each={selectedRecords} for:item="rec" for:index="index" class=" slds-p-left_medium">
+                        <span key={rec.recId} class="slds-p-left_xx-small">
+                            <lightning-pill label={rec.recName}  data-val={index} data-id={rec.recId}
+                                onremove={removeHandler}>
+                                <lightning-icon icon-name={iconname} variant="circle" size='small'></lightning-icon>
+                            </lightning-pill>
+                        </span>
+                    </template>
+                </div>
+                <!-- <div if:true={spinner_flag}>
+                    <div class="spinner_demo" style="height:20px" dir="rtl">
+                        <div role="status" class="slds-spinner slds-spinner_x-small slds-spinner_brand">
+                            <span class="slds-assistive-text">Loading</span>
+                            <div class="slds-spinner__dot-a"></div>
+                            <div class="slds-spinner__dot-b"></div>
+                        </div>
+                    </div>
+                </div> -->
+                <div if:false={is_multiple} class="">
+                <div if:true={singleselectedrec}>
+                    <div class={textboxclass}>
+                        <!-- <lightning-pill label={singleselectedrec} onremove={removeSingleHandler}>
+                            <lightning-icon icon-name={iconname} variant="circle"></lightning-icon>
+                        </lightning-pill> -->
+                        <span class="slds-pill slds-pill_link">
+                            <a href="#" class="slds-pill__action" title="Full pill label verbiage mirrored here" style="width: 403px;">
+                            <span class="slds-pill__label">{singleselectedrec}</span>
+                            </a>
+                            <button class="slds-button slds-button_icon slds-button_icon slds-pill__remove" title="Remove" onclick={removeSingleHandler}>
+                            <svg class="slds-button__icon" aria-hidden="true">
+                            <use xlink:href="/apexpages/slds/latest/assets/icons/utility-sprite/svg/symbols.svg#close"></use>
+                            </svg>
+                            <span class="slds-assistive-text">Remove</span>
+                            </button>
+                        </span>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="">
+                    <div class={hidebox}>
+                        <!-- <div class="slds-input-has-icon slds-input-has-icon_left slds-show"> -->
+                           
+                            <!-- <lightning-icon class="slds-icon slds-input__icon slds-input__icon_left slds-icon-text-default" icon-name={iconname} size="x-small"></lightning-icon>   -->
+
+                            <!-- <lightning-icon class="slds-input__icon slds-show" icon-name="utility:search" size="x-small" alternative-text="search"></lightning-icon> -->
+                            
+                      <input disabled={disable} autocomplete="off" type="text" class={textboxclass} id="searchinput" data-val="searchinput" 
+                          onkeypress={searchField} onkeydown={searchField} onkeyup={searchField} placeholder={placeholder} data-id="inputtext"
+                          onclick={searchField} onfocusout={focusOut_event}/>
+                      <i></i>
+                         
+                          <div if:true={require_attribute} style="color: red;">
+                              Complete this field
+                          </div>
+                       
+                </div>
+                </div>
+                
+                <!-- <div if:true={btn_clear} class="slds-m-around_medium">
+                    <lightning-badge label="Clear All" onclick={clearAllselected}></lightning-badge>
+                </div> -->
+            </div>
+        </div>
+    </div>
+    <div if:true={flag}>
+        <div class={dropdownClass}>
+            <div onmouseleave={mouseOut} onmouseenter={mouseIn}>
+                <ul style="background-color: #FFFFFF;">
+                    <template if:true={searchRecords} for:each={searchRecords} for:item="record">
+                        <li role="presentation" class="slds-listbox__item " key={record.recId}>
+                            <div data-val={record.recId} data-name={record.recName} onclick={setSelectedrecord}
+                                class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta slds-p-top_medium slds-p-left_small slds-p-bottom_small"
+                                role="option">
+
+                                <div class="slds-media__figure">
+                                    <lightning-icon icon-name={iconname} class="slds-icon slds-icon_small"
+                                        size="small" alternative-text="icon"></lightning-icon>
+                                </div>
+                                {record.recName}
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+
+            </div>
+        </div>
+    </div>
+
+    <template if:true={message}>
+        <center>{no_data_label}</center>
+    </template>
+    <template if:true={hitLimit}>
+        <center>You can only add upto 5 crops/pests for product.</center>
+    </template>
+<!-- 
+    <div if:true={btn_flag}>
+        <lightning-button onclick={handleSelectedrecord} label="Show Data" class="slds-p-top_small">
+        </lightning-button>
+    </div> -->
+    <!-- <div if:true={recordVisibility} class="slds-p-top_small">
+        <lightning-datatable key-field="Id" data={recordDataseleted} columns={col}></lightning-datatable>
+    </div> -->
+
+</template>

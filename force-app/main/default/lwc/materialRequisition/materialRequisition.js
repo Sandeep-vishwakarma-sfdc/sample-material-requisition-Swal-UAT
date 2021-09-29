@@ -381,7 +381,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                         this.freesampleObj.Office_Manager__c = data.Region__r.FMM_User__c;
                     }else{
                         if(data.Region__r.RegionHead__c && data.Region__r.RegionHead__r.IsActive)
-                        this.freesampleObj.Office_Manager__c = data.Region__c!=undefined?data.Region__r.RegionHead__c:'';
+                            this.freesampleObj.Office_Manager__c = data.Region__c!=undefined?data.Region__r.RegionHead__c:'';
                     }
                 }
                 if(data.Zone__c){
@@ -495,7 +495,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         }else{
             if(this.validate.depot){
                 if(this.externaluser){
-                    if(this.freesampleObj.PO_Number__c.toString().trim()){
+                    if(this.validate.po_number==false){
                         this.saveMaterialReq();
                     }
                 }else{
@@ -504,7 +504,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                     this.showCustomToast('Error','Depot not available','error');
                 }
             }else{
-                if(this.freesampleObj.PO_Number__c.toString().trim()){
+                if(this.validate.po_number==false){
                     this.saveMaterialReq();
                 }
             }
@@ -534,7 +534,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         });
         console.log('countThirdApprovalCheck ',countThirdApprovalCheck);
         if(countThirdApprovalCheck>0){
-            if(this.freesampleObj.Status__c==this.status.reject && this.freesampleObj.Sub_Status__c==this.sub_status.Rejected_by_HO_Commercial){
+            if(this.freesampleObj.Status__c==this.status.reject && this.freesampleObj.Sub_Status__c==this.sub_status.Rejected_by_HO_Commercial && this.externaluser){
                 this.freesampleObj.Need_Marketing_HO_Approval__c = false;
             }else{
             this.freesampleObj.Need_Marketing_HO_Approval__c = true;

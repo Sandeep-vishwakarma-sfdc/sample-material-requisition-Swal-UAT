@@ -1,0 +1,45 @@
+.hori{
+    display: inline-block;
+    border:none !important;
+	padding-left: 5px;
+}
+.hideboxcss{
+	display: none;	
+}
+
+.dropdownb{
+	max-height: 250px;
+	width: 423px;
+	position: absolute;
+	z-index: 3;
+	border: 1px solid #DEE0E1;
+	border-radius: 8px;
+}
+
+.dropdownsmall{
+	max-height: 250px;
+	width: 189px;
+	position: absolute;
+	z-index: 3;
+	border: 1px solid #DEE0E1;
+	border-radius: 8px;
+	margin-left: -3px;
+}
+li:hover{
+	background-color: #DEE0E1;
+}
+.spinner_demo{
+position: relative;
+	left:85px;
+	top:0px
+}
+
+.mytextb{
+	padding: 0;
+	padding-left: 5px;
+}
+
+.mytextbsmall{
+	padding: 0;
+	padding-left: 10px;
+}
