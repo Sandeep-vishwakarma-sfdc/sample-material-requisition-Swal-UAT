@@ -1,0 +1,242 @@
+<template>
+    <!-- <template if:true={error}>
+        <div class="slds-m-around_medium slds-text-color_error">
+            {error} <br>
+        </div>
+    </template> -->
+    <div class="slds-box slds-theme_default">
+        <div style="margin-top: 10px;padding-top: 10px;border-radius: 10px;color: rgb(92 131 162);font-size: 20px;">
+            <b>Material Requisition Approval</b>
+        </div>
+        <div style="margin-top: 10px;padding-top: 10px;background-color: rgb(92 131 162);border-radius: 10px;">
+            <form>
+                <div
+                    style="display:flex; flex-direction: row; justify-content: center; align-items: center; margin: 10px">
+                    <label style="margin-right:7px;margin-left:7px" for="Requisation"><b class="labelcls">Requisition
+                            No</b></label>
+                    <lightning-input class="Requisation" type="string"></lightning-input>
+
+                    <label style="margin-right:7px;margin-left:7px labelcls" for="Depot"><b
+                            class="labelcls">Depot</b></label>
+                    <lightning-input pattern="^([^0-9]*)$" message-when-pattern-mismatch="Numbers are not allowed"
+                        class="Depot" type="string"></lightning-input>
+
+                    <label style="margin-right:7px;margin-left:7px labelcls" for="Territory"><b
+                            class="labelcls">Territory</b></label>
+                    <lightning-input pattern="^([^0-9]*)$" message-when-pattern-mismatch="Numbers are not allowed"
+                        class="Territory" type="string"></lightning-input>
+
+                    <label style="margin-right:7px;margin-left:7px labelcls" for="From_Date"><b
+                            class="labelcls">From</b></label>
+                    <lightning-input class="From_Date" type="date"></lightning-input>
+
+                    <label style="margin-right:7px;margin-left:7px labelcls" for="To_Date"><b
+                            class="labelcls">To</b></label>
+                    <lightning-input class="To_Date" type="date"></lightning-input>
+                </div>
+            </form>
+
+            <div style="display:flex; flex-direction: row; justify-content: center; align-items: center; margin: 15px">
+                <lightning-button class="slds-m-left_large slds-m-bottom--small" label="Search" title="Search"
+                    onclick={handleSearchClick}></lightning-button>
+                <lightning-button class="slds-m-left_large slds-m-bottom--small" label="Reset" title="Reset"
+                    onclick={handleResetClick}></lightning-button>
+            </div>
+        </div>
+        <lightning-button class="slds-m-left_large slds-m-bottom--small" label="Approve/Reject" title="Approve/Reject"
+            disabled={popupDisabled} onclick={handlePopupbtn}></lightning-button>
+
+
+        <div class="table-scroll" style="border: 1px solid #d9dbdd;">
+            <table if:true={tableData} aria-multiselectable="true"
+                class="slds-table slds-table_cell-buffer slds-no-row-hover slds-table_bordered slds-table_col-bordered"
+                aria-label="Example table of Opportunities with vertical borders">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th class="slds-is-sortable tdborder" scope="col"
+                            style="background-color: rgb(92 131 162); color: white; position: sticky;top: 0;z-index: 1;">
+                            <div class="slds-truncate">
+                                <lightning-input type="checkbox" class="allCheck" onchange={handleChangeSelectAll}>
+                                </lightning-input>
+                            </div>
+                        </th>
+                        <th class="slds-is-sortable fixed-thead tdborder" scope="col"
+                            style="background-color: rgb(92 131 162); color: white;position: sticky;top: 0;z-index: 1;">
+                            <div class="slds-truncate"><b>Name</b></div>
+                        </th>
+                        <th class="slds-is-sortable fixed-thead tdborder" scope="col"
+                            style="background-color: rgb(92 131 162); color: white;position: sticky;top: 0;z-index: 1;">
+                            <div class="slds-truncate"><b>Depot</b></div>
+                        </th>
+                        <th class="slds-is-sortable fixed-thead tdborder" scope="col"
+                            style="background-color: rgb(92 131 162); color: white;position: sticky;top: 0;z-index: 1;">
+                            <div class="slds-truncate"><b>Territory</b></div>
+                        </th>
+                        <th class="slds-is-sortable fixed-thead tdborder" scope="col"
+                            style="background-color: rgb(92 131 162); color: white;position: sticky;top: 0;z-index: 1;">
+                            <div class="slds-truncate"><b>Territory Manager</b></div>
+                        </th>
+                        <th class="slds-is-sortable fixed-thead tdborder" scope="col"
+                            style="background-color: rgb(92 131 162); color: white;position: sticky;top: 0;z-index: 2;">
+                            <div class="slds-truncate"><b>Product Details</b></div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={sampleRequisitions} for:item="sample">
+                        <tr key={sample.Id} class="slds-hint-parent">
+                            <td class="slds-truncate tdborder" scope="row">
+                                <lightning-input type="checkbox" class="checkinput" onchange={handleCheckBox}
+                                    id={sample.Id}></lightning-input>
+                            </td>
+                            <td class="slds-truncate tdborder" scope="row" data-label="Name">{sample.Name}</td>
+                            <td if:true={sample.Depot__r} class="slds-truncate tdborder" scope="row" data-label="Depot">
+                                {sample.Depot__r.Name}</td>
+                            <td if:true={sample.Depot__r} class="slds-truncate tdborder" scope="row" data-label="Territory">
+                                {sample.Territory__r.Name}</td>
+                            <td if:true={sample.Territory_Manager__r} class="slds-truncate tdborder" scope="row"
+                                data-label="Territory Manager">{sample.Territory_Manager__r.Name}</td>
+                            <td if:false={sample.Territory_Manager__r} class="slds-truncate tdborder" scope="row"
+                                data-label="Territory Manager"></td>
+                            <td class="tdborder">
+                                <table
+                                    class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered"
+                                    aria-label="Example table of Opportunities with vertical borders"
+                                    style="border: 1px solid #d9dbdd;border-radius: 10px;">
+                                    <thead>
+                                        <tr class="slds-line-height_reset">
+                                            <th class="slds-is-sortable column-width fixed-thead" scope="col">
+                                                <div class="slds-truncate">Product</div>
+                                            </th>
+                                            <th class="slds-is-sortable column-width fixed-thead" scope="col">
+                                                <div class="slds-truncate">Dose per acre</div>
+                                            </th>
+                                            <th class="slds-is-sortable column-width fixed-thead" scope="col">
+                                                <div class="slds-truncate">Demo plot size (Acre)</div>
+                                            </th>
+                                            <th class="slds-is-sortable column-width fixed-thead" scope="col">
+                                                <div class="slds-truncate">Number of Demo</div>
+                                            </th>
+                                            <th class="slds-is-sortable column-width fixed-thead" scope="col">
+                                                <div class="slds-truncate">Sample Qty(GM/ML)</div>
+                                            </th>
+                                            <th class="slds-is-sortable column-width fixed-thead" scope="col">
+                                                <div class="slds-truncate">Value</div>
+                                            </th>
+                                            <th class="slds-is-sortable column-width fixed-thead" scope="col">
+                                                <div class="slds-truncate">Target Crop</div>
+                                            </th>
+                                            <th class="slds-is-sortable column-width fixed-thead" scope="col">
+                                                <div class="slds-truncate">Target Pest</div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+
+                                    <template for:each={sample.Free_Sampling_Products__r} for:item="product">
+                                        <tr key={product.Id} class="slds-hint-parent">
+                                            <td class="slds-truncate" scope="row" width="20px" data-label="Name">
+                                                {product.Name}</td>
+                                            <td class="slds-truncate" scope="row" data-label="Name">
+                                                {product.Dose_Acre_GM_ML_L_Per_Acre__c}
+                                            </td>
+                                            <td class="slds-truncate" scope="row" data-label="Name">
+                                                {product.Demo_Size_Acer__c}</td>
+                                            <td class="slds-truncate" scope="row" data-label="Name">
+                                                {product.Number_of_Demo__c}</td>
+                                            <td class="slds-truncate" scope="row" data-label="Name">
+                                                {product.Demo_Sample_Qty_GM_ML__c}</td>
+                                            <td class="slds-truncate" scope="row" data-label="Name">
+                                                {product.Demo_material_value__c}</td>
+                                            <td class="slds-truncate" scope="row" data-label="Name">
+                                                <template for:each={sample.Free_Sampling_Crop_Pests__r}
+                                                    for:item="cropPest">
+                                                    <div key={cropPest.Id}>
+                                                        <div if:true={cropPest.Target_Crop__r}>
+                                                            {cropPest.Target_Crop__r.Name}
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </td>
+                                            <td class="slds-truncate" scope="row" data-label="Name">
+                                                <template for:each={sample.Free_Sampling_Crop_Pests__r}
+                                                    for:item="cropPest">
+                                                    <div key={cropPest.Id}>
+                                                        <div if:true={cropPest.Target_Pest__c}>
+                                                            {cropPest.Target_Pest__r.Name}
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </table>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <div if:false={tableData}>
+                <div class="slds-align_absolute-center slds-scoped-notification slds-media slds-media_center slds-scoped-notification_light" role="status">
+                    <div class="slds-media__body">
+                      <p class="slds-align_absolute-center">Material Requisition not found
+                      </p>
+                    </div>
+                  </div>
+            </div>
+        </div>
+    </div>
+    <div style="margin-top:15px; margin-bottom:20px; float:left;padding-top: 5px;padding-left: 20px;margin-left: 50px;padding-bottom: 5px;border-radius: 5px;padding-right: 20px;background-color: white;">
+       Page {page} of {totalPage}
+    </div>
+
+    <div style="margin-top:15px; margin-bottom:20px; float:right;padding-right: 20px;">
+        <lightning-button-group>
+            <lightning-button label="Previous" icon-name="action:back" onclick={previousPage}
+                disabled={disablebtn.previousbtn_disable}></lightning-button>
+            <lightning-button label="Next" icon-name="utility:forward" onclick={nextPage}
+                disabled={disablebtn.nextbtn_disable} style="padding-left: 10px;"></lightning-button>
+        </lightning-button-group>
+    </div>
+    <!-- Model -->
+    <template if:true={openModel}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+            aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Close" onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse"
+                            size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Approve/Reject</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <span slot="modalBody">
+                        Selected Items: {countFSM}
+                        <lightning-radio-group name="modalType" label="Action" class="approve_reject"
+                            options={apActions} value={currentAction} onchange={handleActionChange} required
+                            type="button"></lightning-radio-group>
+                        <div>
+                            <lightning-textarea name="comment" label="Comments" value={commentVal}
+                                onchange={handleComment}></lightning-textarea>
+                        </div>
+                    </span>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={submitDetails} title="OK">OK</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+    <!-- EndModel -->
+
+    <div if:true={customToast.showToast}>
+        <div class="alert" style={customToast.varient}>
+            <span class="closebtn">&times;</span>
+            <strong>{customToast.title}</strong>
+        </div>
+    </div>
+</template>

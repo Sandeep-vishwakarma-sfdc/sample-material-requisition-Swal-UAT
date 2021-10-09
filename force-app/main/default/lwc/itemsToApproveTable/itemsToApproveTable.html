@@ -1,0 +1,194 @@
+<template>
+    <div class="slds-box slds-theme_default">
+    <template if:true={errorApex}>
+        <div class="slds-m-around_medium slds-text-color_error">
+            {errorApex} <br>
+        </div>
+    </template>
+    <template if:true={errorJavascript}>
+        <div class="slds-m-around_medium slds-text-color_error">
+            {errorJavascript} <br>
+        </div>
+    </template>
+    <form>
+    <div style="display:flex; flex-direction: row; justify-content: center; align-items: center; margin: 10px">
+        <label style="margin-top:15px;margin-right:7px;margin-left:7px" for="Requisation"><b>Requisition No</b></label>
+        <lightning-input class="Requisation" type="string"></lightning-input>
+        
+        <label style="margin-top:15px;margin-right:7px;margin-left:7px" for="Depot"><b>Depot</b></label>
+        <lightning-input pattern="^([^0-9]*)$" message-when-pattern-mismatch="Numbers are not allowed" class="Depot" type="string"></lightning-input>
+
+        <label style="margin-top:15px;margin-right:7px;margin-left:7px" for="Territory"><b>Territory</b></label>
+        <lightning-input pattern="^([^0-9]*)$" message-when-pattern-mismatch="Numbers are not allowed" class="Territory" type="string"></lightning-input>
+
+        <label style="margin-top:15px;margin-right:7px;margin-left:7px" for="From_Date"><b>From</b></label>
+        <lightning-input class="From_Date"  type="date" onchange={handeFromDate}></lightning-input>
+
+        <label style="margin-top:15px;margin-right:7px;margin-left:7px" for="To_Date"><b>To</b></label>
+        <lightning-input class="To_Date"  type="date" onchange={handeToDate}></lightning-input>
+    </div>    
+    </form>
+    <div style="display:flex; flex-direction: row; justify-content: center; align-items: center; margin: 15px">
+        <lightning-button
+            class="slds-m-left_large slds-m-bottom--small"
+            label="Search"
+            title="Search"
+            onclick={handleSeacrhClick}
+    ></lightning-button>
+    <lightning-button
+            class="slds-m-left_large slds-m-bottom--small"
+            label="Reset"
+            title="Reset"
+            onclick={handleResetClick}
+    ></lightning-button>
+    </div>    
+    <lightning-button
+            class="slds-m-left_large slds-m-bottom--small"
+            label="Approve/Reject"
+            title="Approve/Reject"
+            disabled={isManageDisabled}
+            onclick={handleButtonClick}
+    ></lightning-button>
+    
+    <c-datatable-flow
+
+            columns={columns}
+            mydata={rowData}
+            onrowactiontaken={handleRowAction}
+            onrowselected={updateSelectedRows}>
+    </c-datatable-flow>
+    <div class="toast-message">
+        <c-toast-message></c-toast-message>
+    </div>
+    <c-uc-modal class="modal-window" show-footer available-reactions={modalReactions} cancel-reactions={modalCancelReactions} confirmation-message={confirmationMessage} name="modalName"
+                onreaction={handleModalReactionButtonClick}>
+        <span slot="modalHeader">
+            Manage Approval Processes
+        </span>
+        <span slot="modalBody">
+            Selected Items: {apCount}
+            <lightning-radio-group name="modalType"
+                                   label="Action"
+                                   options={allowedActions}
+                                   value={currentAction}
+                                   onchange={handleActionChange}
+                                   required
+                                   type="button"></lightning-radio-group>
+            <template if:true={actionReassign}>
+                <div class="slds-p-bottom--x-small">
+                   <c-lookup-container
+                           onselectionchange={handleSelectionChange}
+                   ></c-lookup-container>
+                 </div>
+            </template>
+                <div>
+                    <lightning-textarea name="comment" label="Comments" value={commentVal}
+                                        onchange={handleComment}></lightning-textarea>
+                 </div>
+            </span>
+    </c-uc-modal>
+    <template if:true={isCommentModalOpen}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeCommentModal}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Comment</h2>
+                </header>
+               <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                <lightning-textarea name="comment" label="Comments" value={commentVal} onchange={handleSingleComment}></lightning-textarea>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeCommentModal} title="Cancel">Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={submitCommentDetails} title="Submit">Submit</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+    <template if:true={isViewModalOpen}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Free Sample Details</h2>
+                </header>
+               <div class="slds-modal__content slds-p-around_medium">
+                
+                <template if:true={fspWrapList}>
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                        <thead style="border-top: 0;">
+                            <tr style="border-top: 0;">
+                                <th style="border-top: 0;" class="" scope="col">
+                                    <div class="slds-truncate" style="color:#FF7701;font-size:14px" title="PRODUCT">PRODUCT</div>
+                                </th>
+                                <th class="" scope="col" style="border-top: 0;">
+                                    <div class="slds-truncate" style="color:#FF7701;font-size:14px" title="ACRE">ACRE</div>
+                                </th>
+                                <th class="" scope="col" style="border-top: 0;">
+                                    <div class="slds-truncate" style="color:#FF7701;font-size:14px" title="SIZE">SIZE</div>
+                                </th>
+                                <th class="" scope="col" style="border-top: 0;">
+                                    <div class="slds-truncate" style="color:#FF7701;font-size:14px" title="DEMO">DEMO</div>
+                                </th>
+                                <th class="" scope="col" style="border-top: 0;">
+                                    <div class="slds-truncate" style="color:#FF7701;font-size:14px" title="TARGET CROP">TARGET CROP</div>
+                                </th>
+                                <th class="" scope="col" style="border-top: 0;">
+                                    <div class="slds-truncate" style="color:#FF7701;font-size:14px" title="TARGET PEST">TARGET PEST</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={fspWrapList} for:item="aList">
+                                <tr key={aList.Id}>
+                                    
+                                    <th scope="col">
+                                        <div class="text-style" style="font-size:14px">{aList.productName}</div>
+                                    </th>
+                                    <th scope="col">
+                                        <div class="text-style" style="font-size:14px">{aList.acre}</div>
+                                    </th>
+                                    <th scope="col">
+                                        <div class="text-style" style="font-size:14px">{aList.size}</div>
+                                    </th>
+                                    <th scope="col">
+                                        <div class="text-style" style="font-size:14px">{aList.demo}</div>
+                                    </th>
+                                    <th scope="col">
+                                        <template for:each={aList.targetCopList} for:item="cropList">
+                                            <div key={aList.Id} class="slds-border_top slds-border_bottom text-style" style="font-size:14px">{cropList}</div>
+                                        </template>
+                                    </th>
+                                    <th scope="col">
+                                        <template for:each={aList.targetPestList} for:item="pestList">
+                                            <div key={aList.Id} class="slds-border_top slds-border_bottom text-style" style="font-size:14px">{pestList}</div>
+                                        </template>
+                                    </th>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    <br/>
+                </template>
+                <template if:true={error}>
+                    {label.somerroroccured}
+                </template>
+
+
+
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeViewModal} title="Cancel">Cancel</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</div>
+</template>

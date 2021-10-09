@@ -5,8 +5,8 @@ import { LightningElement, track, api, wire } from 'lwc';
 import searchedList from '@salesforce/apex/AccountLookupController.searchedList'
 import { CurrentPageReference } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-// import { fireEvent, registerListener } from 'c/pubsub';
-//import no_data from '@salesforce/label/c.No_data_found';
+import { fireEvent, registerListener } from 'c/pubsub';
+import no_data from '@salesforce/label/c.No_data_found';
 const MAXLIMIT = 5;
 export default class Lookupcmp extends LightningElement {
     @api placeholder;
@@ -41,7 +41,7 @@ export default class Lookupcmp extends LightningElement {
     @track textboxclass='';
     @track dropdownClass=''
     @track hasRendered = true;
-    @track no_data_label = 'no_data';
+    @track no_data_label = no_data;
     @api hitLimit = false;
     @api countItem = 0;
   
@@ -151,7 +151,7 @@ export default class Lookupcmp extends LightningElement {
             this.flag = false;
             const selectEvent = new CustomEvent('selected',{detail:newObj});
             this.dispatchEvent(selectEvent);
-            // fireEvent(this.pageRef,"selectitems",this.singleselectedrec);
+            fireEvent(this.pageRef,"selectitems",this.singleselectedrec);
             this.hidebox = 'hideboxcss'
             }
         }

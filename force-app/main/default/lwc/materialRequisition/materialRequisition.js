@@ -18,6 +18,7 @@ import getCurrentUser from '@salesforce/apex/SampleMaterialRequisition.getCurren
 import getProductNRV from '@salesforce/apex/SampleMaterialRequisition.getProductNRV';
 import reCallApprovalProcess from '@salesforce/apex/SampleMaterialRequisition.reCallApprovalProcess';
 import updateFsp from '@salesforce/apex/SampleMaterialRequisition.updateFSP';
+import getTerritory from '@salesforce/apex/SampleMaterialRequisition.getTerritory';
 
 
 const Depot = 'D';
@@ -25,10 +26,13 @@ const Ho_commercial = 'H';
 
 export default class MaterialRequisition extends NavigationMixin(LightningElement) {
     @track buttonmatrixobj = {'saveDisable':false,'editDisable':false,'cancelDisable':false,'submit_for_approvalDisable':true,'approveDisable':true,'rejectDisable':true,'approval_histroyDisable':false,'deleteDisable':false,'addbtn':false,'canclebtn':false,'saveHidden':false,'editHidden':false,'cancelHidden':false,'submit_for_approvalHidden':false,'approveHidden':false,'rejectHidden':false,'approval_histroyhidden':false,'ho_statushidden':true};
+    managersFound = true;
     @track salesOrgCode = '';
     @track product_filter = '';
     @track crop_filter = '';
     @track pest_filter = '';
+    @track territory_filter = `Sales_Org_Code__c = '1210' and TerritoryManager__c=null limit 20`;
+    @track territory = {'Id':'','Name':''}
     @track crop = {'Id':'','Name':''};
     @track crop_lst = []; 
     @track pest = {'Id':'','Name':''};
@@ -45,9 +49,10 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         material_dispatch_on:false,
         po_number:false,
         depot:false,
+        territory:false
     }
     productItemValidateCount= 0;
-    @track freesampleObj ={'Name':'','Depot':'','Depot__r':{'Name':''}};
+    @track freesampleObj ={'Name':'','Depot':'','Depot__r':{'Name':''},'Territory__c':'','Territory__r':{'Name':''}};
     @track lstfreeSampleProduct = [];
     @track freeSampleProduct = {
         'Id':'',
@@ -76,13 +81,15 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
     @track demo_sample_formula = '';
     @track salesOrg = '';
+    TerritoryNotFound = false;
     approvalClicked = false;
     thirdApprovalChecked = false;
     thresholdValue = '';
     submitForApprovalflag = false;
     actionbyHo = false; 
-    is_TM = false;
+    is_TM = true;
     aShowModal = false;
+    isModalOpen = false;
     loggedinuser = '';
     opentoast = true;
     message = 'success';
@@ -110,12 +117,13 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         closed:'Closed'
     }
     profiles = {
-        'territory_manager':'Territory Manager SWAL',
         // 'territory_manager':'Territory Manager for Swal', //Test
-        'FMM_Users':'FMM USER SWAL',
+        // 'FMM_Users':'FMM Users', //Test
         // 'regional_and_zonal_manager':'Regional/ Zonal for SWAL', //Test
-        'Channel_Deployment_Manager_SWAL':'Channel Deployment Manager SWAL(Onboarding)',
+        'territory_manager':'Territory Manager SWAL',
+        'FMM_Users':'FMM USER SWAL',
         'regional_and_zonal_manager':'Regional/Zonal Manager SWAL',
+        'Channel_Deployment_Manager_SWAL':'Channel Deployment Manager SWAL(Onboarding)',
         'Ho_commercial':'Marketing HO Swal'
     }
     @api freesamplemanagementid = '';
@@ -139,13 +147,18 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
     }
     @wire(getProfile)
     getLoggedInProfile({error,data}){
-        console.log('Profile Name ',data);
+        console.log('Profile Name 146 ',data);
         if(data){
             this.profile_name = data;
             if(this.profile_name==this.profiles.territory_manager){
                 this.is_TM = true;
-                this.disable.comment = false;
             }
+            if(this.profile_name==this.profiles.FMM_Users || this.profile_name == this.profiles.regional_and_zonal_manager){
+                this.disable.Depot = true;
+            }
+        }
+        if(error){
+            console.log('error getting Profile Name ',error);
         }
     }
     @wire(getCurrentUser)
@@ -153,15 +166,46 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         if(data){
             this.loggedinuser = data;
             console.log('current user ',this.loggedinuser);
+            if(this.loggedinuser){
+                // this.territory_filter = `Sales_Org_Code__c = '1210' and (FMM_User_Id__c='${this.loggedinuser}' OR Regional_Manager_Id__c='${this.loggedinuser}' OR Zonal_Marketing_Manager_1_Id__c='${this.loggedinuser}') AND (TerritoryManager__c=null)`;
+                this.territory_filter = `Sales_Org_Code__c = '1210' and (FMM_User_Id__c='${this.loggedinuser}' OR (Regional_Manager_Id__c='${this.loggedinuser}' and FMM_User_Id__c=null) OR (Zonal_Marketing_Manager_1_Id__c='${this.loggedinuser}' AND Regional_Manager_Id__c=null and FMM_User_Id__c=null)) AND (TerritoryManager__c=null)`;
+            }
+        }
+    }
+
+    @wire(getTerritory)
+    getTerritory({error,data}){
+        if(data){
+            console.log('Territory ',data,'freesaple id',this.freesamplemanagementid);
+            if(data.length>0 && this.freesamplemanagementid==''){ // Create
+                console.log('Creating record with FMM, RM or ZMM');
+            }else if(data.length>0 && this.freesamplemanagementid!=''){ // Edit
+                console.log('Edit')
+            }else if(data.length==0 && this.freesamplemanagementid==''){ // Territory Manager has assigned
+                if(this.profile_name!=this.profiles.territory_manager){ // back to list view
+                    this.TerritoryNotFound = true;
+                    this.isModalOpen = true;
+                    console.log('Territory Manager has assigned ');
+                }
+            }else{
+                console.log('Territory ',data,'freesaple id',this.freesamplemanagementid);
+            }
+        }
+        if(error){
+            console.log(error);
         }
     }
     
     connectedCallback(){
-        
+        this.onloadData();
     }
 
+
     renderedCallback(){
-        
+        if(!this.profile_name || !this.loggedinuser){
+            this.onloadData();
+        }
+
         if(this.externaluser==Depot || this.externaluser==Ho_commercial){
             this.buttonmatrixobj.cancelHidden = true;
         }
@@ -192,11 +236,36 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         }
     }
 
+    onloadData(){
+        getProfile().then(data =>{
+            console.log('Profile Name 187',data);
+            this.profile_name = data;
+        })
+        getCurrentUser().then(userid =>{
+            this.loggedinuser = userid;
+        });
+    }
+
     externalUserButtonMatrix(){
-        
+        console.log('UserButton profileName ',this.profile_name,' status',this.freesampleObj.Status__c,' loggedinuser ',this.loggedinuser);
+
+        // console.log('condition 247',(this.profile_name==this.profiles.territory_manager || this.profile_name==this.profiles.regional_and_zonal_manager || this.profile_name==this.profiles.FMM_Users) && (this.freesampleObj.OwnerId==this.loggedinuser || this.freesampleObj.OwnerId == undefined));
+        console.log('profiles.regional_and_zonal_manager ',this.profiles.regional_and_zonal_manager);
+        console.log('condition 249',this.profile_name==this.profiles.regional_and_zonal_manager);
+
+        console.log('condition 251',this.freesampleObj.OwnerId == undefined);
         if(this.freesampleObj.Status__c==this.status.Draft || this.freesampleObj.Status__c==this.status.reject){
             this.buttonmatrixobj.approval_histroyDisable = this.freesampleObj.Status__c==this.status.Draft?true:false;
-            if(this.profile_name==this.profiles.territory_manager){
+            if((this.profile_name==this.profiles.territory_manager || this.profile_name==this.profiles.regional_and_zonal_manager || this.profile_name==this.profiles.FMM_Users) && (this.freesampleObj.OwnerId==this.loggedinuser || this.freesampleObj.OwnerId == undefined)){
+                console.log('Enable All fields')
+                if(this.profile_name!=this.profiles.territory_manager){
+                    this.is_TM = false;
+                    if(this.TerritoryNotFound){
+                        this.is_TM = true;
+                        this.isModalOpen = true;
+                    }
+                }
+                this.disable.comment = false;
                 if(this.freesampleObj.Id){
                     this.buttonmatrixobj.addbtn = false;
                     this.disablefield(false,false,false,false,true,true);
@@ -213,7 +282,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         }else
         if(this.freesampleObj.Status__c==this.status.Pending && this.freesampleObj.Sub_Status__c==this.sub_status.Pending_for_Approval_1){
-            this.is_TM = false;
+            this.is_TM = true;
             this.buttonmatrixobj.addbtn = true;
             this.disablefield(true,true,true,true,true,true);
             console.log('Test 218 ',this.profile_name==this.profiles.regional_and_zonal_manager || this.profile_name == this.profiles.FMM_Users || this.profile_name==this.profiles.Channel_Deployment_Manager_SWAL);
@@ -230,7 +299,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         }else
         if(this.freesampleObj.Status__c==this.status.Pending && this.freesampleObj.Sub_Status__c==this.sub_status.Pending_for_Approval_2){
-            this.is_TM = false;
+            this.is_TM = true;
             this.buttonmatrixobj.addbtn = true;
             this.disablefield(true,true,true,true,true,true);
             if(this.profile_name==this.profiles.regional_and_zonal_manager  || this.profile_name == this.profiles.FMM_Users || this.profile_name==this.profiles.Channel_Deployment_Manager_SWAL){
@@ -244,7 +313,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         }else
         if(this.freesampleObj.Status__c==this.status.Pending && this.freesampleObj.Sub_Status__c==this.sub_status.Pending_for_Approval_3){
-            this.is_TM = false;
+            this.is_TM = true;
             console.log('FSM obj -->',this.freesampleObj,'Profile '+this.profiles.Ho_commercial,' login user ',this.loggedinuser);
             this.buttonmatrixobj.addbtn = true;
             this.disablefield(true,true,true,true,true,true);
@@ -260,7 +329,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         }else
         if(this.freesampleObj.Status__c==this.status.Pending_from_Depot && this.freesampleObj.Sub_Status__c==this.sub_status.for_PO_Number){
-            this.is_TM = false;
+            this.is_TM = true;
             this.buttonmatrixobj.addbtn = true;
             this.disablefield(true,true,true,true,true,true);
             if(this.externaluser==Depot){
@@ -276,7 +345,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         }else
         if(this.freesampleObj.Status__c==this.status.Pending_from_Depot && this.freesampleObj.Sub_Status__c==this.sub_status.for_Dispatch_Details){
-            this.is_TM = false;
+            this.is_TM = true;
             this.buttonmatrixobj.addbtn = true;
             this.disablefield(true,true,true,true,true,true);
             if(this.externaluser==Depot){
@@ -292,7 +361,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         }else
         if(this.freesampleObj.Status__c==this.status.Pending && this.freesampleObj.Sub_Status__c==this.sub_status.Pending_from_HO_Commercial){
-            this.is_TM = false;
+            this.is_TM = true;
             this.buttonmatrixobj.addbtn = true;
             this.disablefield(true,true,true,true,true,true);
             if(this.externaluser==Ho_commercial){
@@ -305,7 +374,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         }else
         if(this.freesampleObj.Status__c==this.status.Closed){
-            this.is_TM = false;
+            this.is_TM = true;
             this.buttonmatrixobj.addbtn = true;
             this.buttonmatrixobj.approval_histroyDisable = false;
             this.disablefield(true,true,true,true,true,true);
@@ -341,8 +410,17 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         console.log('thresholdValue $$$',this.thresholdValue);
         this.freesampling.Id = data.Id != undefined?data.Id:'';
         this.freesampling.Depot = data.Depot__c!=undefined?data.Depot__r.Name:'';
+        
         if(this.freesampling.Depot){
             this.validate.depot = false;
+        }
+        if(this.freesamplemanagementid!='' && this.freesampleObj.Territory__c){
+        this.freesampleObj.Territory__c = data.Territory__c!=undefined?data.Territory__c:'';
+        this.territory.Id = data.Territory__c!=undefined?data.Territory__c:'';
+        this.territory.Name = data.Territory__c!=undefined?data.Territory__r.Name:'';
+            if(this.territory.Id){
+            //    this.getDepotByTerritory();
+            }
         }
         this.freesampling.status = data.Status__c!=undefined?data.Status__c:'';
         this.freesampling.substatus = data.Sub_Status__c!=undefined?data.Sub_Status__c:'';
@@ -353,6 +431,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.freesampling.X3rd_Approval_Date_Time__c = data.X3rd_Approval_Date_Time__c!=undefined?this.formatAMPM(data.X3rd_Approval_Date_Time__c):'';
         this.freesampling.Ho_comment__c = data.Ho_comment__c!=undefined?data.Ho_comment__c:'';
         this.freesampling.comment__c = data.Comment__c!=undefined?data.Comment__c:'';
+        this.freesampling.OwnerId = data.OwnerId!=undefined?data.OwnerId:'';
         
         console.log('FSM obj',this.freesampleObj);
         if(this.freesamplemanagementid!=''){
@@ -372,10 +451,13 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 this.productSection = this.lstfreeSampleProduct.length > 0?true:false;
             }).catch(err=>console.log('Err ',err));
         }
-        if(this.profile_name==this.profiles.territory_manager){
+        if(this.profile_name==this.profiles.territory_manager || this.profile_name==this.profiles.FMM_Users || this.profile_name == this.profiles.regional_and_zonal_manager){
             getManagers().then(data=>{
+                this.managersFound = data?true:false;
                 console.log('Managers ',data);
-                this.freesampleObj.Territory__c = data.Id!=undefined?data.Id:'';
+                if(this.profile_name==this.profiles.territory_manager){
+                    this.freesampleObj.Territory__c = data.Id!=undefined?data.Id:'';
+                }
                 if(data.Region__c){
                     if(data.Region__r.FMM_User__c && data.Region__r.FMM_User__r.IsActive){
                         this.freesampleObj.Office_Manager__c = data.Region__r.FMM_User__c;
@@ -388,10 +470,22 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                     this.thresholdValue = data.Zone__r.Threshold_value__c;
                 }
                 this.freesampleObj.Sales_Assistant__c  = data.Zone__c!=undefined?data.Zone__r.ZMMUser__c:'';
-            }).catch(err=>console.log('ERR getManagers ',err));
+            }).catch(err=>{
+                console.log('ERR getManagers ',err)
+                this.managersFound = false;
+            });
         }
-        
-        getDepot().then(data=>{
+        if(!this.freesamplemanagementid){
+        this.getDepotByTerritory();
+        }
+        this.hasRendered.Freesampling = true;
+    }
+
+    getDepotByTerritory(){
+        if(this.profile_name == this.profiles.territory_manager){
+            this.territory.Id = '';
+        }
+        getDepot({territory:this.territory.Id}).then(data=>{
             console.log('Depot data ',data);
             this.lstDepotOption = [];
             if(data.length==0){
@@ -404,6 +498,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                     this.lstDepotOption = [...this.lstDepotOption, { label: data[i].Depot__r.Name, value: data[i].Depot__c }];
                     this.Depot_details = data;
                     console.log('lst Depot ',this.lstDepotOption);
+                    console.log('Depot name ',this.freesampleObj.Depot__c);
                     if(this.lstDepotOption.length==1){
                         console.log('Depot2 ',this.lstDepotOption[0].value);
                         this.freesampleObj.Depot__c = this.lstDepotOption[0].value;
@@ -414,7 +509,6 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 }
             }
         });
-        this.hasRendered.Freesampling = true;
     }
 
     handleChangeDepot(event){
@@ -505,7 +599,16 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 }
             }else{
                 if(this.validate.po_number==false){
-                    this.saveMaterialReq();
+                    if(this.is_TM==false){
+                        if(this.freesampleObj.Territory__c){
+                            this.validate.territory = false;
+                            this.saveMaterialReq();
+                        }else{
+                            this.validate.territory = true;
+                        }
+                    }else if(this.is_TM==true){
+                        this.saveMaterialReq();
+                    }
                 }
             }
         }
@@ -518,13 +621,36 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
 
     saveMaterialReq(){
         // this.freesampleObj.SalesOrg__c = this.salesOrg;
-        this.freesampleObj.Sales_Org__c = this.salesOrg;
+        // this.freesampleObj.Sales_Org__c = this.salesOrg;
+        this.spinner = true;
+        setTimeout(() => {
+            this.spinner = false;
+        }, 1500);
         if(Number(this.thresholdValue)){
             this.freesampleObj.Threshold_value__c  = this.thresholdValue;
         }else{
             this.thresholdValue = 0;
             this.freesampleObj.Threshold_value__c  = this.thresholdValue;
         }
+
+        if(this.freesamplemanagementid==''){ // Create mode
+            if(this.profile_name==this.profiles.FMM_Users){
+                this.freesampleObj.Raised_By__c = 'FMM';
+            }
+            if(this.profile_name == this.profiles.regional_and_zonal_manager){
+                if(this.loggedinuser == this.freesampleObj.Office_Manager__c){
+                    this.freesampleObj.Raised_By__c = 'RM';
+                }
+                if(this.loggedinuser == this.freesampleObj.Sales_Assistant__c){
+                    this.freesampleObj.Raised_By__c = 'ZMM';
+                    this.freesampleObj.Approved_By_ZMM__c = true;
+                }
+            }
+            if(this.profile_name == this.profiles.territory_manager){
+                this.freesampleObj.Raised_By__c = 'TM';
+            }
+        }
+        
         let countThirdApprovalCheck = 0
         this.lstfreeSampleProduct.forEach(product=>{
             console.log('material value > threshold value',Number(product.material_value),' > ',Number(this.thresholdValue))
@@ -543,6 +669,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             this.freesampleObj.Need_Marketing_HO_Approval__c = false;
         }
         console.log('FSM new ',this.freesampleObj);
+        if(this.managersFound){
         saveFreeSampleManagement({freeSamplingObj:this.freesampleObj}).then(fsm=>{
              Array.prototype.forEach.call(this.lstfreeSampleProduct,product=>{
                 delete product.DemoSampleQty;
@@ -560,7 +687,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                     location.reload();
                 }, 2000);
             }
-        if(this.profile_name==this.profiles.territory_manager){    
+        if(this.profile_name==this.profiles.territory_manager || this.profile_name==this.profiles.regional_and_zonal_manager || this.profile_name==this.profiles.FMM_Users){    
         addProduct({product:str,freeSamplingId:fsm.Id}).then(data=>{     
             console.log('Material Requisition ',data);
             if(data){
@@ -610,6 +737,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
             }
         }
         });
+        }else{
+            this.showToastmessage('Error','There is not territory assigned to this territory manager','error');
+        }
     }
 
     handleChangeHoStatus(event){
@@ -732,9 +862,14 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
 
     clearProductSection(){
         Array.prototype.forEach.call(this.template.querySelectorAll('c-lookupcmp'),element => {
-            element.clearAllselected();
-            element.hitLimit = false;
-            element.countItem = 0;
+            
+            let ele = element.id?element.id.split('-')[0]:'';
+            console.log('element to clear ',ele);
+            if(ele!='territory'){
+                element.clearAllselected();
+                element.hitLimit = false;
+                element.countItem = 0;
+            }
         });
         this.freeSampleProduct.product.Id = '';
         this.freeSampleProduct.product.Name = '';
@@ -756,7 +891,7 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         }
     }
     handleChangeComment(event){
-        if(this.profile_name==this.profiles.territory_manager){
+        if(this.profile_name==this.profiles.territory_manager || this.profile_name==this.profiles.FMM_Users || this.profile_name==this.profiles.regional_and_zonal_manager){
             this.freesampleObj.Comment__c = event.target.value;
         }
     }
@@ -891,6 +1026,13 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.disable.Crop = true;
         this.disable.Pest = true;
     }
+    handleTerritotySelected(event){
+        this.freesampleObj.Territory__c = event.detail.recId;
+        this.territory.Id =  event.detail.recId;
+        this.territory.Name = event.detail.recName;
+        this.disable.Depot = false;
+        this.getDepotByTerritory();
+    }
     handleBacktoRecord(){
         console.log('FSM Id ',this.freesampling.Id)
         if(this.freesampling.Id!=''){
@@ -934,6 +1076,13 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
         this.crop.Id = '';
         this.crop.Name = '';
         console.log('Crops ',this.crop_lst);
+    }
+
+    handleRemoveTerritory(event){
+        this.freesampleObj.Territory__c = '';
+        this.territory.Id = '';
+        this.territory.Name = '';
+        this.disable.Depot = true;
     }
     
     handleMultiplePestSelected(event){
@@ -995,6 +1144,9 @@ export default class MaterialRequisition extends NavigationMixin(LightningElemen
                 actionName: 'view'
             }
         });*/
+    }
+    handleBack(){
+        history.back();
     }
 // comment third
     disablefield(product,demo_acre,demo_size,num_size,crop,pest){

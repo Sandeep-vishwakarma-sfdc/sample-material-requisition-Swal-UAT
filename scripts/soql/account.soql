@@ -4,3 +4,5 @@
 //     SFDX: Execute SOQL Query with Currently Selected Text
 
 SELECT Id, Name FROM Account
+
+SELECT id,Name from Territory_Distributor__c where Name like '%%' and Sales_Org_Code__c = '1210' and (FMM_User_Id__c='0050K00000AiISWQA3' OR (Regional_Manager_Id__c='0050K00000AiISWQA3' and FMM_User_Id__c=null) OR (Zonal_Marketing_Manager_1_Id__c='0050K00000AiISWQA3' AND Regional_Manager_Id__c=null and FMM_User_Id__c=null)) AND (TerritoryManager__c=null)

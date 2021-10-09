@@ -8,7 +8,23 @@
 
       <div style="clear:both;"></div>
       
-      <div if:true={is_TM} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3">
+      <div if:false={is_TM} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"
+      style="margin-top:12px;">
+      <div class="slds-form-element">
+        <label class="slds-form-element__label">Territory<span class="star">*</span></label>
+        <div class="slds-form-element__control">
+          <c-lookupcmp placeholder='Select Territory' id='territory' iconname='standard:product' multiselect=false sobject='Territory_Distributor__c'
+            fieldname='Name' filter={territory_filter} displayfield='Name' onselected={handleTerritotySelected}
+            singleselectedrec={territory.Name} onremove={handleRemoveTerritory} cmpwidth='long'></c-lookupcmp>
+            <div class="star" if:true={validate.territory}>Complete this field</div>
+        </div>
+      </div>
+    </div>
+
+    <div if:false={is_TM} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"></div>
+    <div if:false={is_TM} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3"></div>
+
+      <div if:false={buttonmatrixobj.addbtn} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3">
         <div class="slds-form-element" style="margin-top:12px;">
           <div class="slds-form-element__control">
             <label class="slds-form-element__label">Depot<span class="star">*</span></label>
@@ -21,7 +37,7 @@
       </div>
     
     
-      <div if:false={is_TM} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3">
+      <div if:true={buttonmatrixobj.addbtn} class="slds-p-horizontal--small slds-size--1-of-1 slds-medium-size--1-of-2 slds-large-size--1-of-3">
         <div class="slds-form-element" style="margin-top:12px;">
           <div class="slds-form-element__control">
             <lightning-input type="text"  label="Depot" value={freesampling.Depot} disabled=true></lightning-input>
@@ -415,4 +431,20 @@
     </div>
  </div>
 <!-- custom end toast mesg -->
+
+<template if:true={isModalOpen}>
+  <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+      <div class="slds-modal__container">
+          <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+              <p><b>You are not allowed to create Material Requisition
+              </b></p>
+          </div>
+          <footer class="slds-modal__footer">
+              <button class="slds-button slds-button_brand" onclick={handleBack} title="OK">OK</button>
+          </footer>
+      </div>
+  </section>
+  <div class="slds-backdrop slds-backdrop_open"></div>
+</template>
+
 </template>

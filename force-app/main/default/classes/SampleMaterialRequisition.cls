@@ -13,7 +13,15 @@ public without sharing class SampleMaterialRequisition {
         return UserInfo.getUserId();
     }
 
-    @AuraEnabled
+    @AuraEnabled(cacheable=true)
+    public static List<Territory_Distributor__c> getTerritory(){
+        String userid = UserInfo.getUserId();
+        // List<Territory_Distributor__c>  territory = [Select Id,Name from Territory_Distributor__c where (FMM_User_Id__c=:userid OR Regional_Manager_Id__c=:userid OR Zonal_Marketing_Manager_1_Id__c=:userid) AND (TerritoryManager__c=null OR TerritoryManagerActive__c=false)];
+        List<Territory_Distributor__c>  territory = [SELECT id,Name from Territory_Distributor__c where Name like '%%' and Sales_Org_Code__c = '1210' and (FMM_User_Id__c=:userid OR (Regional_Manager_Id__c=:userid and FMM_User_Id__c=null) OR (Zonal_Marketing_Manager_1_Id__c=:userid AND Regional_Manager_Id__c=null and FMM_User_Id__c=null)) AND (TerritoryManager__c=null)];
+        return territory;
+    }
+
+    @AuraEnabled(cacheable=true)
     public static User getUserCountry(){
         List<User> lstusr =  [select Id,Name,Country,profile.name from User where Id=:UserInfo.getUserId()];
         User usr = lstusr[0];
@@ -33,10 +41,12 @@ public without sharing class SampleMaterialRequisition {
         Id ho_commerical = [select Id from User where ProfileId=:ho_profile.Id limit 1].Id;
         Free_Sample_Management__c newfsm = new Free_Sample_Management__c();
         newfsm.recordTypeId = fsmRecordType;
-        newfsm.Territory_Manager__c = UserInfo.getUserId();
+        if(getProfile()=='Territory Manager for Swal'){
+            newfsm.Territory_Manager__c = UserInfo.getUserId();
+        }
         newfsm.Technical_Manager__c = ho_commerical; //UPL LTD as third Approval
         newfsm.SalesOrg__c = getSalesOrgCode().Id;
-        //newfsm.Sales_Org__c = getSalesOrgCode().Id;
+        // newfsm.Sales_Org__c = getSalesOrgCode().Id;
         newfsm.Zip_Code__c = '123-4567'; // Need to change
         newfsm.Status__c = 'Draft';
         newfsm.Sub_Status__c = 'Draft';
@@ -45,9 +55,13 @@ public without sharing class SampleMaterialRequisition {
     }
 
     @AuraEnabled(cacheable=true)
-    public static List<TM_Depot_Mapping__c> getDepot(){
+    public static List<TM_Depot_Mapping__c> getDepot(String territory){
         List<TM_Depot_Mapping__c> depomapping = new List<TM_Depot_Mapping__c>();
-        depomapping = [select Id,Name,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c from TM_Depot_Mapping__c where Territory_Manager__c =:UserInfo.getUserId() and Depot__r.Name!=null and Depot__r.HO_Commercial__c!=null];
+        if(String.isEmpty(territory)){
+            depomapping = [select Id,Name,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c from TM_Depot_Mapping__c where Territory_Manager__c =:UserInfo.getUserId() and Depot__r.Name!=null and Depot__r.HO_Commercial__c!=null and Depot__r.SalesOrg__r.Sales_Org_Code__c='1210'];
+        }else{
+            depomapping = [select Id,Name,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c from TM_Depot_Mapping__c where Territory__c =:territory and Depot__r.Name!=null and Depot__r.HO_Commercial__c!=null and Depot__r.SalesOrg__r.Sales_Org_Code__c='1210' and Territory_Manager__c=null];
+        }
         return depomapping;
     }
 
@@ -74,7 +88,8 @@ public without sharing class SampleMaterialRequisition {
 
     @AuraEnabled(cacheable=true)
     public static Territory_Distributor__c getManagers(){
-        Territory_Distributor__c territory = [SELECT Id, Name, Region__c,Region__r.RegionHead__c,Region__r.RegionHead__r.IsActive,Region__r.FMM_User__c,Region__r.FMM_User__r.IsActive, TerritoryManager__c, SalesOrg__c, Zone__c,Zone__r.ZonalHead__c,Zone__r.ZMMUser__c,Zone__r.Threshold_value__c,LastModifiedDate FROM Territory_Distributor__c where TerritoryManager__c =:UserInfo.getUserId() order by LastModifiedDate  DESC limit 1];
+        String userid = UserInfo.getUserId();
+        Territory_Distributor__c territory = [SELECT Id, Name, Region__c,Region__r.RegionHead__c,Region__r.RegionHead__r.IsActive,Region__r.FMM_User__c,Region__r.FMM_User__r.IsActive, TerritoryManager__c, SalesOrg__c, Zone__c,Zone__r.ZonalHead__c,Zone__r.ZMMUser__c,Zone__r.Threshold_value__c,LastModifiedDate FROM Territory_Distributor__c where TerritoryManager__c =:userid or FMM_User_Id__c=:userid or Regional_Manager_Id__c=:userid or Zonal_Marketing_Manager_1_Id__c=:userid order by LastModifiedDate  DESC limit 1];
         return territory;
     }
 
@@ -82,7 +97,7 @@ public without sharing class SampleMaterialRequisition {
     public static Free_Sample_Management__c getFreesamplingById(String freeSampleMangtId){
         System.debug('FSM '+freeSampleMangtId);
         List<Free_Sample_Management__c> lstfsm = new List<Free_Sample_Management__c>();
-        lstfsm = [SELECT Id,Name,Threshold_value__c,SalesOrg__c,Territory_Manager__c,Territory__c,Territory__r.Zone__r.Threshold_value__c,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c,Status__c,Sub_Status__c,PO_Number__c,Material_Dispatched_Date__c,X1st_Approval_Date_Time__c,X2nd_Approval_Date_Time__c,X3rd_Approval_Date_Time__c,Ho_comment__c,Office_Manager__c,Sales_Assistant__c,Technical_Manager__c,Comment__c from Free_Sample_Management__c where Id=:freeSampleMangtId];
+        lstfsm = [SELECT Id,Name,Threshold_value__c,SalesOrg__c,Territory_Manager__c,Territory__c,Territory__r.Name,Territory__r.Zone__r.Threshold_value__c,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c,Status__c,Sub_Status__c,PO_Number__c,Material_Dispatched_Date__c,X1st_Approval_Date_Time__c,X2nd_Approval_Date_Time__c,X3rd_Approval_Date_Time__c,Ho_comment__c,Office_Manager__c,Sales_Assistant__c,Technical_Manager__c,Comment__c,OwnerId from Free_Sample_Management__c where Id=:freeSampleMangtId];
         System.debug('FSM lst'+lstfsm);
         return lstfsm[0];
     }
@@ -91,7 +106,7 @@ public without sharing class SampleMaterialRequisition {
     public static Free_Sample_Management__c saveFreeSampleManagement(Free_Sample_Management__c freeSamplingObj){
         System.debug('upsert fsm'+freeSamplingObj);
         Boolean alreadyRejected = false;
-        if(getProfile() == 'Territory Manager SWAL' && freeSamplingObj.Status__c == 'Rejected' && freeSamplingObj.Sub_Status__c=='Rejected by HO Commercial'){
+        if(getProfile() == 'Territory Manager for Swal' && freeSamplingObj.Status__c == 'Rejected' && freeSamplingObj.Sub_Status__c=='Rejected by HO Commercial'){
             alreadyRejected = true;
         }
         upsert freeSamplingObj;
@@ -279,7 +294,16 @@ public without sharing class SampleMaterialRequisition {
     @AuraEnabled
     public static Free_Sample_Management__c submitForApproval(String fsm_id){
         Free_Sample_Management__c fsm = new Free_Sample_Management__c();
-        fsm = [SELECT Id,Name,SalesOrg__c,Territory_Manager__c,Territory__c,Depot__c,Status__c,Sub_Status__c,Office_Manager__c,Approval_Submission_Date_Time__c from Free_Sample_Management__c where Id=:fsm_id];
+        fsm = [SELECT Id,Name,SalesOrg__c,Territory_Manager__c,Raised_By__c,Territory__c,Depot__c,Status__c,Sub_Status__c,Office_Manager__c,Approval_Submission_Date_Time__c from Free_Sample_Management__c where Id=:fsm_id];
+        if(fsm.Raised_By__c=='FMM' || fsm.Raised_By__c=='RM'){
+            fsm.Status__c = 'Draft';
+            fsm.Sub_Status__c = 'Pending for Approval 2';
+        }
+        if(fsm.Raised_By__c=='ZMM'){
+            fsm.Status__c = 'Draft';
+            fsm.Sub_Status__c = 'Pending for Approval 3';
+        }
+        update fsm;
         
         setApprovalProcess(fsm);
         return fsm;
@@ -326,24 +350,27 @@ public without sharing class SampleMaterialRequisition {
     }
 
     public static void sendEmailToUser(String obj_id){
-        Free_Sample_Management__c fsm = [select Id,Name,Status__c,Sub_Status__c,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c,Territory_Manager__c,Territory_Manager__r.Email,Office_Manager__c,Office_Manager__r.Email,Sales_Assistant__c,Sales_Assistant__r.Email,Technical_Manager__r.Email,PO_Number__c,Material_Dispatched_Date__c from Free_Sample_Management__c where Id=:obj_id];
+        Free_Sample_Management__c fsm = [select Id,Name,Status__c,Sub_Status__c,Depot__c,Depot__r.Name,Depot__r.Depot_person__c,Depot__r.HO_Commercial__c,Territory_Manager__c,Territory_Manager__r.Email,Office_Manager__c,Office_Manager__r.Email,Sales_Assistant__c,Sales_Assistant__r.Email,Technical_Manager__r.Email,PO_Number__c,Material_Dispatched_Date__c,Owner.Email from Free_Sample_Management__c where Id=:obj_id];
 
         List<Free_Sampling_Product__c> lst_fsp = [Select Id,Name,Product__c,Product__r.Name,Dose_Acre_GM_ML_L_Per_Acre__c,Demo_Size_Acer__c,Number_of_Demo__c from Free_Sampling_Product__c where Free_Sampling__c=:obj_id];
 
         List<Free_Sampling_Crop_Pest__c> lst_cropPest = [select Id,Name,Product__c,Free_Sampling__c,RecordType.Name,Product__r.Name,Target_Crop__r.Name,Target_Pest__r.Name from Free_Sampling_Crop_Pest__c where Free_Sampling__c=:obj_id];
 
         System.debug('obj_id '+obj_id);
-        String url = 'http://uplltd.force.com/MaterialRequisition'; //production
-        // String url = 'https://uat-uplltd.cs117.force.com/MaterialRequisition'; //UAT
+        //String url = 'http://uplltd.force.com/MaterialRequisition'; //production
+        String url = 'https://uat-uplltd.cs117.force.com/MaterialRequisition'; //UAT
+        String massapproval = 'http://uplltd.force.com/requisitionapprover';//production
         // String url = 'https://upltest-uplltd.cs57.force.com/MaterialRequisition'; //test
+        // String massapproval = 'https://upltest-uplltd.cs57.force.com/requisitionapprover'; //test
         String mailbody = '';
         Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
         List<String> lst_email = new List<String>();
-
+        lst_email.add('sandeep.vishwakarma@skinternational.com');
         if(fsm.Status__c=='Pending' && fsm.Sub_Status__c=='Pending from HO Commercial'){
             lst_email.add(fsm.Depot__r.HO_Commercial__c);
             mail.setSubject('Material Requisition: '+fsm.Name+' (Pending from HO Commercial)');
-            mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>PO Number for '+fsm.Name+' material requisition is updated. Please check below link to approve or reject the Material requisition</p><br><a href="'+url+'?recordId='+obj_id+'&vf=H">Click here</a> to view Details </br><br></br><br><b>Thank You,</b></br><br><b>UPL TEAM</b></br>';
+            mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>PO Number for '+fsm.Name+' material requisition is updated. Please check below link to approve or reject the Material requisition</p><br><a href="'+url+'?recordId='+obj_id+'&vf=H">Click here</a> to view Details </br><p><a href="'+massapproval+'">Click here</a> to mass approve/reject the Material Requisition</p><br></br><br><b>Thank You,</b></br><br><b>UPL TEAM</b></br>';
+            lst_email.add('sandeep.vishwakarma@skinternational.com');
         }
         if(fsm.Status__c=='Pending from Depot' && fsm.Sub_Status__c=='for Dispatch Details'){
             lst_email.add(fsm.Depot__r.Depot_person__c);
@@ -352,18 +379,28 @@ public without sharing class SampleMaterialRequisition {
         }
         if(fsm.Status__c=='Rejected' && fsm.Sub_Status__c=='Rejected by HO Commercial'){
             mail.setSubject('Material Requisition: '+fsm.Name+' (Rejected by HO Commercial)');
-            mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>Find below details of Material Requisition.</p><br>';
-            lst_email.add(fsm.Territory_Manager__r.Email);
+            mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p><b>Sample Requisition "'+fsm.Name+'" is Rejected</b></p><br>';
+            if(fsm.Owner.Email!=null){
+                lst_email.add(fsm.Owner.Email);
+            }
             mailbody+=getTableEmailBody(fsm,lst_fsp,lst_cropPest);
         }
         if(fsm.Status__c=='Closed'){
             mail.setSubject('Material Requisition: '+fsm.Name+' (Closed)');
             mailbody+='<br><img src="https://upl--upltest.cs57.my.salesforce.com/servlet/servlet.ImageServer?id=0150k000000izrV&oid=00D0k000000Cq7D" alt="Company Logo" height="68" width="85"/><p><b>Dear Sir/Madam,</b></p><br/><p>Find below details of Material Requisition.</p><br>';
-            lst_email.add(fsm.Territory_Manager__r.Email);
+            if(fsm.Territory_Manager__c!=null){
+                lst_email.add(fsm.Territory_Manager__r.Email);
+            }
             mailbody+=getTableEmailBody(fsm,lst_fsp,lst_cropPest);
-            lst_email.add(fsm.Sales_Assistant__r.Email);
-            lst_email.add(fsm.Technical_Manager__r.Email);
-            lst_email.add(fsm.Office_Manager__r.Email);
+            if(!String.isEmpty(fsm.Sales_Assistant__r.Email)){
+                lst_email.add(fsm.Sales_Assistant__r.Email);
+            }
+            if(!String.isEmpty(fsm.Technical_Manager__r.Email)){
+                lst_email.add(fsm.Technical_Manager__r.Email);
+            }
+            if(!String.isEmpty(fsm.Office_Manager__r.Email)){
+                lst_email.add(fsm.Office_Manager__r.Email);
+            }
         }
         if(lst_email.size()>0){
         mail.setToAddresses(lst_email);
@@ -463,9 +500,9 @@ public without sharing class SampleMaterialRequisition {
     public static string getTableEmailBody(Free_Sample_Management__c fsm,List<Free_Sampling_Product__c> lst_fsp,List<Free_Sampling_Crop_Pest__c> lst_cropPest){
         String htmlBody = '';
         String material_dispatch = fsm.Material_Dispatched_Date__c!=null?fsm.Material_Dispatched_Date__c.format():'--';
-        htmlBody = '<table border="1"><tr ><th>Material Requisition</th><td>'+fsm.Name+'</td></tr><tr ><th>Depot</th><td>'+fsm.Depot__r.Name+'</td></tr><tr ><th>PO Number</th><td> '+fsm.PO_Number__c+'</td></tr><tr ><th>Material Dispatched Date</th><td> '+material_dispatch+'</td></tr><tr ><th>Status</th><td>'+fsm.Status__c+'</td></tr></table>';
+        htmlBody = '<p><b>Material Requisition Details:</b></p><table border="1"><tr ><th>Material Requisition</th><td>'+fsm.Name+'</td></tr><tr ><th>Depot</th><td>'+fsm.Depot__r.Name+'</td></tr><tr ><th>PO Number</th><td> '+fsm.PO_Number__c+'</td></tr><tr ><th>Material Dispatched Date</th><td> '+material_dispatch+'</td></tr><tr ><th>Status</th><td>'+fsm.Status__c+'</td></tr></table>';
 
-        htmlBody += '<br><table border="1" style="border-collapse: collapse"><caption>Product Details:</caption><tr><th>Product Name</th><th>Demo Plot Size (Acre)</th><th>Dose per acre (Gram / ML)</th><th>Number of Demo</th></tr>';
+        htmlBody += '<br><p><b>Free Sample Product</b></p><table border="1" style="border-collapse: collapse"><tr><th style="background-color:#87CEEB">Product Name</th><th style="background-color:#87CEEB">Demo Plot Size (Acre)</th><th style="background-color:#87CEEB">Dose per acre (Gram / ML)</th><th style="background-color:#87CEEB">Number of Demo</th></tr>';
         for(Free_Sampling_Product__c fsp : lst_fsp){
             String productName = fsp.Product__r.Name; if(fsp.Product__r.Name == null){productName = '--';}
             String Demo_Acre = String.valueOf(fsp.Dose_Acre_GM_ML_L_Per_Acre__c); if(fsp.Dose_Acre_GM_ML_L_Per_Acre__c == null){Demo_Acre = '--';}
@@ -475,7 +512,7 @@ public without sharing class SampleMaterialRequisition {
         }
         htmlBody += '</table><br><br>';
 
-        htmlBody += '<table border="1" style="border-collapse: collapse"><caption>Crop and Pest Details:</caption><tr><th>Type</th><th>Product Name</th><th>Target Crop</th><th>Target Pest</th></tr>';
+        htmlBody += '<p><b>Free sample Crop and Pest Details:</b></p><table border="1" style="border-collapse: collapse"><tr><th style="background-color:#87CEEB">Type</th><th style="background-color:#87CEEB">Product Name</th><th style="background-color:#87CEEB">Target Crop</th><th style="background-color:#87CEEB">Target Pest</th></tr>';
 
         for(Free_Sampling_Crop_Pest__c cp : lst_cropPest){
             String type = cp.RecordType.Name; if(cp.RecordType.Name == null){type = '--';}

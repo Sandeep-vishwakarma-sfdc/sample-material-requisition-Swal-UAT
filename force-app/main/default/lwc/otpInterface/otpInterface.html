@@ -1,0 +1,27 @@
+<template>
+  <div style="height: 100%;width: 100%;background-color: rgb(92 131 162);">
+        <section>
+          <div if:true={sendOTP2} class="form">
+            <label style="color: green;">We've e-mailed you a 6 digit code.Please check your email and enter the code here to complete the verification.</label><br/>
+            
+            <input type="text" pattern="\d*" placeholder="Enter Recevied OTP" maxlength="6" minlength="6" class="otpinput">
+            <input type="submit" class="btn" value="Verify OTP" onclick={handleverify} style="text-align: center;"/>
+            <a href="#" onclick={verifyEmailPromise}>Resend OTP</a>
+            <div if:true={invalidMesg} style="color: red;">
+              <label>Sorry you've entered incorrect OTP</label><br/>
+            </div>
+          </div>
+          <div if:true={sendOTP1} class="form">
+            <label>Please take a moment to verify your email</label><br/>
+            <label>This helps us confirm your identity</label>
+            <input type="text" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" placeholder="Enter Email" class="emailinput">
+            <div if:true={validate.email} style="color: red;">Invalid email</div>
+            <input type="submit" class="btn" value="Send OTP" onclick={handleSendOTP} style="text-align: center;"/>
+            <div if:true={invalidMesg} style="color: red;">
+              <label>Sorry you're not an authorized user</label><br/>
+            </div>
+          </div>
+         
+        </section>
+  </div>
+</template>

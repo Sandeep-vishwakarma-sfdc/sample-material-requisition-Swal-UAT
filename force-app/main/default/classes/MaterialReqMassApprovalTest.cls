@@ -1,8 +1,7 @@
 @isTest
-public with sharing class SampleMaterialRequisitionTest {
+public with sharing class MaterialReqMassApprovalTest {
     @TestSetup
     static void makeData(){
-        
      User tm = new User(
      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Territory Manager SWAL'].Id,
      LastName = 'TM',
@@ -169,24 +168,19 @@ public with sharing class SampleMaterialRequisitionTest {
         User zm = [select Id,Name from User where LastName='ZM' limit 1];
         User Hom = [select Id,Name from User where LastName='HOM' limit 1];
         Depot__c depot = [select Id,Name from Depot__c limit 1]; 
-        Free_Sample_Management__c fsm1 = new Free_Sample_Management__c();
-        Free_Sampling_Product__c fsp = [select Id,Name from Free_Sampling_Product__c limit 1];
         Territory_Distributor__c td = [select Id,Name from Territory_Distributor__c limit 1];
-        System.runAs(tm){
-        SampleMaterialRequisition.getFreesampling();
-        SampleMaterialRequisition.getCurrentUser();
-        SampleMaterialRequisition.getUserCountry();
-        SampleMaterialRequisition.getProfile();
-        SampleMaterialRequisition.getFreesampling();
-        SampleMaterialRequisition.getDepot(td.Name);
-        SampleMaterialRequisition.getManagers();
-        SampleMaterialRequisition.getFreesamplingById(fsm.Id+'');
-        SampleMaterialRequisition.saveFreeSampleManagement(fsm);
-        String str = '[{"Id":1,"product":{"Id":"'+prod.Id+'","Name":"'+prod.Name+'","crop":[{"Id":"'+crop.Id+'","Name":"'+crop.Name+'","prod_id":"'+prod.Id+'","recordTypeName":"Pest"},{"Id":"'+crop.Id+'","Name":"'+crop.Name+'","prod_id":"'+prod.Id+'","recordTypeName":"Pest"}],"CropPest":[{"Id":"'+pest.Id+'","Name":"'+pest.Name+'","prod_id":"'+prod.Id+'","recordTypeName":"Pest"},{"Id":"'+pest.Id+'","Name":"'+pest.Name+'","prod_id":"'+prod.Id+'","recordTypeName":"Pest"}]},"dose_acre":"10","demo_size":"20","numberOfDemo":"30"}]';
-        SampleMaterialRequisition.addProduct(str,fsm.Id);
-        SampleMaterialRequisition.getProductList(fsm.Id);  
+        
+        Free_Sampling_Product__c fsp = [select Id,Name from Free_Sampling_Product__c limit 1];
+        
+        SWAL_Mass_Approval__c customSettingSwalMassApproval = new SWAL_Mass_Approval__c();
+        customSettingSwalMassApproval.Name = 'Test';
+        customSettingSwalMassApproval.ho_email__c = 'sandeep.vishwakarma@skinternational.com';
+        customSettingSwalMassApproval.OTP__c = '123456';
+        customSettingSwalMassApproval.Session_Time__c = System.now();
+        insert customSettingSwalMassApproval;
+        
         Id fsmRecordType = Schema.SObjectType.Free_Sample_Management__c.getRecordTypeInfosByName().get('Post Free Sample Management').getRecordTypeId();
-        //Free_Sample_Management__c fsm1 = new Free_Sample_Management__c();
+        Free_Sample_Management__c fsm1 = new Free_Sample_Management__c();
         fsm1.Zip_Code__c = '123-4568';
         fsm1.recordTypeId = fsmRecordType;
         fsm1.Territory_Manager__c = tm.Id;
@@ -194,35 +188,28 @@ public with sharing class SampleMaterialRequisitionTest {
         fsm1.Sales_Assistant__c = zm.Id;
         fsm1.Technical_Manager__c = hom.Id; //UPL LTD as third Approval
         fsm1.SalesOrg__c = sales_org.Id;
-        fsm1.Status__c = 'Draft';
-        fsm1.Sub_Status__c = 'Draft';
-        fsm1.Raised_By__c = 'TM';
+        fsm1.Territory__c = td.Id;
+        fsm1.Status__c = 'Pending';
+        fsm1.Sub_Status__c = 'Pending from HO Commercial';
         fsm1.Depot__c = depot.Id;
         insert fsm1;  
-        SampleMaterialRequisition.submitForApproval(fsm1.id);    
-        }
-        SampleMaterialRequisition.approveRecord(fsm1.Id,'Approve');
-        SampleMaterialRequisition.rejectRecord(fsm1.Id,'Reject');
-        fsm.Status__c = 'Pending from Depot';
-        fsm.Sub_Status__c = 'for PO Number';
-        update fsm;
-        SampleMaterialRequisition.saveFreeSampleManagement(fsm);
-        fsm.Status__c = 'Pending';
-        fsm.Sub_Status__c = 'Pending from HO Commercial';
-        update fsm;
-        SampleMaterialRequisition.saveFreeSampleManagement(fsm);
-        fsm.Status__c = 'Pending from Depot';
-        fsm.Sub_Status__c = 'for Dispatch Details';
-        update fsm;
-        SampleMaterialRequisition.saveFreeSampleManagement(fsm);
-        fsm.Status__c = 'Rejected';
-        fsm.Sub_Status__c = 'Rejected by HO Commercial';
-        update fsm;
-        SampleMaterialRequisition.saveFreeSampleManagement(fsm);
-        fsm.Status__c = 'Closed';
-        fsm.Sub_Status__c = '';
-        update fsm;
-        SampleMaterialRequisition.saveFreeSampleManagement(fsm);
-        SampleMaterialRequisition.deleteFreeSampleProduct(new List<String>{fsp.Id+''});
+        String salesorg1 =  '1210';
+        String status1 = 'Pending';
+        String subStatus1 = 'Pending from HO Commercial';
+        String hoemail = 'sandeep.vishwakarma@skinternational.com';
+        
+        String query = 'select Id,Name,Depot__c,Depot__r.Name,Depot__r.HO_Commercial__c,Territory__c,Territory__r.Name,Territory_Manager__c,Territory_Manager__r.Name,Approval_Submission_Date_Time__c,(Select Id,Name,Product__c,Product__r.Name,Dose_Acre_GM_ML_L_Per_Acre__c,Demo_Size_Acer__c,Number_of_Demo__c,Demo_Sample_Qty_GM_ML__c,Demo_material_value__c from Free_Sampling_Products__r),(select Id,Name,Target_Crop__c,Target_Crop__r.Name,Target_Pest__c,Target_Pest__r.Name,recordType.Name from Free_Sampling_Crop_Pests__r) from Free_Sample_Management__c where SalesOrg__r.Sales_Org_Code__c=\''+salesorg1+'\' and Territory__c!=null and Status__c=\''+status1+'\' and Sub_Status__c=\''+subStatus1+'\' and Depot__r.HO_Commercial__c=\''+hoemail+'\' order by CreatedDate ASC';
+        MaterialReqMassApproval.getSampleRequisition(query);   
+        //'['+fsm1.Id+']'
+        List<Free_Sample_Management__c> approveRec = MaterialReqMassApproval.approveRecords('["'+fsm1.Id+'"]','Test comment');
+        fsm1.Status__c = 'Pending';
+        fsm1.Sub_Status__c = 'Pending from HO Commercial';
+        update fsm1;
+        List<Free_Sample_Management__c> rejectRec = MaterialReqMassApproval.rejectRecords('["'+fsm1.Id+'"]','Test comment');
+        Boolean successlist = MaterialReqMassApproval.isSessionActive(hoemail,'456123');
+        String otpsend = MaterialReqMassApproval.sendOTP(hoemail);
+        Boolean verifyMail = MaterialReqMassApproval.verifyEmail(hoemail);
+        
     }
+        
 }
